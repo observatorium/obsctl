@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"syscall"
 
@@ -15,7 +14,6 @@ import (
 	"github.com/observatorium/obsctl/pkg/extkingpin"
 	"github.com/observatorium/obsctl/pkg/version"
 	"github.com/oklog/run"
-	"github.com/pkg/errors"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -80,35 +78,16 @@ func main() {
 	})
 
 	// Listen for termination signals.
-	{
-		cancel := make(chan struct{})
-		g.Add(func() error {
-			return interrupt(logger, cancel)
-		}, func(error) {
-			close(cancel)
-		})
-	}
+	g.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
 
 	if err := g.Run(); err != nil {
 		if *logLevel == "debug" {
 			// Use %+v for github.com/pkg/errors error to print with stack.
-			level.Error(logger).Log("err", fmt.Sprintf("%+v", errors.Wrapf(err, "%s command failed", cmd)))
+			level.Error(logger).Log("err", fmt.Sprintf("%+v", fmt.Errorf("%s command failed %w", cmd, err)))
 			os.Exit(1)
 		}
-		level.Error(logger).Log("err", errors.Wrapf(err, "%s command failed", cmd))
+		level.Error(logger).Log("err", fmt.Errorf("%s command failed %w", cmd, err))
 		os.Exit(1)
-	}
-}
-
-func interrupt(logger log.Logger, cancel <-chan struct{}) error {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-	select {
-	case s := <-c:
-		level.Info(logger).Log("msg", "caught signal. Exiting.", "signal", s)
-		return nil
-	case <-cancel:
-		return errors.New("canceled")
 	}
 }
 

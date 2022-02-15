@@ -102,4 +102,3 @@ lint: $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL) build format docs check-git deps
 	@$(GOLANGCI_LINT) run
 	@echo ">> detecting misspells"
 	@find . -type f | grep -v vendor/ | grep -vE '\./\..*' | xargs $(MISSPELL) -error
-	$(call require_clean_work_tree,"detected files without copyright; run make lint file and commit changes.")
