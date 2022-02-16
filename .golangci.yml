@@ -27,26 +27,6 @@ output:
   # print linter name in the end of issue text, default is true
   print-linter-name: true
 
-linters:
-  enable:
-    # Sorted alphabetically.
-    - deadcode
-    - errcheck
-    - goconst
-    - godot
-    - gofmt
-    - goimports
-    - gosimple
-    - govet
-    - ineffassign
-    - misspell
-    - staticcheck
-    - structcheck
-    - typecheck
-    - unparam
-    - unused
-    - varcheck
-
 linters-settings:
   errcheck:
     exclude: ./.errcheck_excludes.txt
