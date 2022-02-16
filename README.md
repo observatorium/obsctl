@@ -3,41 +3,27 @@
 A cli to interact with Observatorium instances.
 
 ```bash mdox-exec="obsctl --help"
-usage: obsctl [<flags>] <command> [<args> ...]
+CLI to interact with Observatorium
 
-obsctl
+Usage:
+  obsctl [flags]
+  obsctl [command]
+
+Available Commands:
+  current     Display configuration for the currently logged in tenant.
+  help        Help about any command
+  login       Login as a tenant. Will also save tenant details locally.
+  logout      Logout currently logged in tenant.
+  query       Query metrics for a tenant.
+  read        Read series, labels & rules of a tenant.
+  rules       Read/write Prometheus Rules configuration for a tenant.
+  switch      Switch to another locally saved tenant.
 
 Flags:
-  -h, --help               Show context-sensitive help (also try --help-long and
-                           --help-man).
-      --version            Show application version.
-      --log.level=info     Log filtering level.
-      --log.format=clilog  Log format to use.
+  -h, --help                help for obsctl
+      --log.format string   Log format to use. (default "clilog")
+      --log.level string    Log filtering level. (default "info")
+      --version             version for obsctl
 
-Commands:
-  help [<command>...]
-    Show help.
-
-  login [<flags>]
-    Login as a tenant. Will also save tenant details locally.
-
-  logout
-    Logout currently logged in tenant.
-
-  current
-    Display configuration for the currently logged in tenant.
-
-  switch [<tenant-name>]
-    Switch to another locally saved tenant.
-
-  read [<flags>]
-    Read series, labels & rules of a tenant.
-
-  rules [<flags>]
-    Read/write Prometheus Rules configuration for a tenant.
-
-  query <query>
-    Query metrics for a tenant.
-
-
+Use "obsctl [command] --help" for more information about a command.
 ```
