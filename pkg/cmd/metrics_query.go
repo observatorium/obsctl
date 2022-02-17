@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var queryCmd = &cobra.Command{
+var metricsQueryCmd = &cobra.Command{
 	Use:     "query",
 	Short:   "Query metrics for a tenant.",
 	Long:    "Query metrics for a tenant. Pass a single valid PromQL query to fetch results for.",
@@ -17,5 +17,5 @@ var queryCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(queryCmd)
+	metricsCmd.AddCommand(metricsQueryCmd)
 }

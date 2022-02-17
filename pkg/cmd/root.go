@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/bwplotka/mdox/pkg/clilog"
@@ -22,7 +21,7 @@ var logger log.Logger
 
 var logLevel, logFormat string
 
-func setupLogger() log.Logger {
+func setupLogger() {
 	var lvl level.Option
 	switch logLevel {
 	case "error":
@@ -38,13 +37,13 @@ func setupLogger() log.Logger {
 	}
 	switch logFormat {
 	case logFormatJson:
-		return level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), lvl)
+		logger = level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), lvl)
 	case logFormatLogfmt:
-		return level.NewFilter(log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr)), lvl)
+		logger = level.NewFilter(log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr)), lvl)
 	case logFormatCLILog:
 		fallthrough
 	default:
-		return level.NewFilter(clilog.New(log.NewSyncWriter(os.Stderr)), lvl)
+		logger = level.NewFilter(clilog.New(log.NewSyncWriter(os.Stderr)), lvl)
 	}
 }
 
@@ -53,17 +52,17 @@ var rootCmd = &cobra.Command{
 	Short:   "CLI to interact with Observatorium",
 	Long:    `CLI to interact with Observatorium`,
 	Version: version.Version,
-	Run: func(cmd *cobra.Command, args []string) {
-		logger = setupLogger()
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		// TODO(saswatamcode): Propagte ctx here.
+		setupLogger()
 	},
+	Run: func(cmd *cobra.Command, args []string) {},
 }
 
 func Execute(ctx context.Context) error {
 	if err := rootCmd.Execute(); err != nil {
-		level.Error(logger).Log("err", fmt.Sprintf("%+v", fmt.Errorf("command exec failed %w", err)))
 		return err
 	}
-	// TODO(saswatamcode): Propagte ctx here.
 	return nil
 }
 
