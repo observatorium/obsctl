@@ -17,11 +17,10 @@ const (
 	logFormatCLILog = "clilog"
 )
 
+var logLevel, logFormat string
 var logger log.Logger
 
-var logLevel, logFormat string
-
-func setupLogger() {
+func setupLogger(*cobra.Command, []string) {
 	var lvl level.Option
 	switch logLevel {
 	case "error":
@@ -47,26 +46,24 @@ func setupLogger() {
 	}
 }
 
-var rootCmd = &cobra.Command{
-	Use:     "obsctl",
-	Short:   "CLI to interact with Observatorium",
-	Long:    `CLI to interact with Observatorium`,
-	Version: version.Version,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		// TODO(saswatamcode): Propagte ctx here.
-		setupLogger()
-	},
-	Run: func(cmd *cobra.Command, args []string) {},
-}
-
-func Execute(ctx context.Context) error {
-	if err := rootCmd.Execute(); err != nil {
-		return err
+func NewObsctlCmd(ctx context.Context) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:              "obsctl",
+		Short:            "CLI to interact with Observatorium",
+		Long:             `CLI to interact with Observatorium`,
+		Version:          version.Version,
+		PersistentPreRun: setupLogger,
+		Run: func(cmd *cobra.Command, args []string) {
+			level.Info(logger).Log("msg", "run called")
+		},
 	}
-	return nil
-}
 
-func init() {
-	rootCmd.PersistentFlags().StringVar(&logLevel, "log.level", "info", "Log filtering level.")
-	rootCmd.PersistentFlags().StringVar(&logFormat, "log.format", logFormatCLILog, "Log format to use.")
+	cmd.AddCommand(NewMetricsCmd(ctx))
+	cmd.AddCommand(NewContextCommand(ctx))
+	cmd.AddCommand(NewLoginCmd(ctx))
+
+	cmd.PersistentFlags().StringVar(&logLevel, "log.level", "info", "Log filtering level.")
+	cmd.PersistentFlags().StringVar(&logFormat, "log.format", logFormatCLILog, "Log format to use.")
+
+	return cmd
 }

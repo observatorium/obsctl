@@ -11,10 +11,11 @@ import (
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
+	cmd := cmd.NewObsctlCmd(ctx)
 
 	var g run.Group
 	g.Add(func() error {
-		return cmd.Execute(ctx)
+		return cmd.Execute()
 	}, func(err error) {
 		cancel()
 	})

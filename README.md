@@ -10,12 +10,10 @@ Usage:
   obsctl [command]
 
 Available Commands:
-  current     Display configuration for the currently logged in tenant.
+  context     View/Add/Edit context configuration.
   help        Help about any command
   login       Login as a tenant. Will also save tenant details locally.
-  logout      Logout currently logged in tenant.
   metrics     Metrics based operations for Observatorium.
-  switch      Switch to another locally saved tenant.
 
 Flags:
   -h, --help                help for obsctl
