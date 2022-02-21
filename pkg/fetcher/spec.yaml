@@ -1,0 +1,730 @@
+openapi: 3.0.0
+info:
+  description: The Observatorium API
+  version: "0.0.1"
+  title: Observatorium API
+  license:
+    name: Apache 2.0
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+tags:
+  - name: observatoriumv1
+    description: Calls related to Observatorium
+paths:
+  /api/metrics/v1/{tenant}/api/v1/rules/raw:
+    parameters:
+      - in: path
+        name: tenant
+        description: name of the tenant
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - rulesrawv1
+      summary: Lists all configured rules for a tenant in YAML form
+      operationId: getRawRules
+      description: |
+        You can list all configured rules for a tenant in YAML form
+      responses:
+        "200":
+          description: all rules for a tenant
+          content:
+            application/yaml:
+              schema:
+                $ref: "#/components/schemas/RulesRaw"
+        "401":
+          description: error finding tenant ID
+        "500":
+          description: server side error while listing rules
+    put:
+      tags:
+        - rulesrawv1
+      summary: Set/overwrite the rules for a tenant
+      operationId: setRawRules
+      description: You can set rules for a tenant
+      responses:
+        "200":
+          description: successfully updated rules file
+        "401":
+          description: error finding tenant ID
+        "500":
+          description: server error while saving rules
+      requestBody:
+        content:
+          application/yaml:
+            schema:
+              $ref: "#/components/schemas/RulesRaw"
+        description: Rules to set for a tenant
+  /api/metrics/v1/{tenant}/api/v1/rules:
+    parameters:
+      - in: path
+        name: tenant
+        description: name of the tenant
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: type
+        description: type of Rules
+        schema:
+          type: string
+          enum:
+            - alert
+            - record
+      - in: query
+        name: match[]
+        description: Repeated label selector argument
+        schema:
+          type: array
+          items:
+            type: string
+    get:
+      tags:
+        - rulesv1
+      summary: Get Rules for a tenant in JSON form
+      operationId: getRules
+      description: |
+        You can get rules for a tenant with health data
+      responses:
+        "2XX":
+          description: rule for a tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RulesResponse"
+        "4XX":
+          description: Bad request
+        "5XX":
+          description: Server side error
+  /api/metrics/v1/{tenant}/api/v1/labels:
+    parameters:
+      - in: path
+        name: tenant
+        description: name of the tenant
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: match[]
+        description: Repeated series selector argument
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: start
+        description: Start timestamp
+        schema:
+          type: string
+          format: rfc3339 | unix_timestamp
+      - in: query
+        name: end
+        description: End timestamp
+        schema:
+          type: string
+          format: rfc3339 | unix_timestamp
+    get:
+      tags:
+        - labelsv1
+      summary: Get all labels for a tenant
+      operationId: getLabels
+      description: |
+        You can get labels for a tenant
+      responses:
+        "2XX":
+          description: labels for a tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelsResponse"
+        "4XX":
+          description: Bad request
+        "5XX":
+          description: Server side error
+  /api/metrics/v1/{tenant}/api/v1/label/{label_name}/values:
+    parameters:
+      - in: path
+        name: tenant
+        description: name of the tenant
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: label_name
+        description: label name to get values for
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: match[]
+        description: Repeated series selector argument
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: start
+        description: Start timestamp
+        schema:
+          type: string
+          format: rfc3339 | unix_timestamp
+      - in: query
+        name: end
+        description: End timestamp
+        schema:
+          type: string
+          format: rfc3339 | unix_timestamp
+    get:
+      tags:
+        - labelvaluesv1
+      summary: Get label values for a tenant
+      operationId: getLabelValues
+      description: |
+        You can get label values for a label of a tenant
+      responses:
+        "2XX":
+          description: label values for a tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelValuesResponse"
+        "4XX":
+          description: Bad request
+        "5XX":
+          description: Server side error
+  /api/metrics/v1/{tenant}/api/v1/query:
+    parameters:
+      - in: path
+        name: tenant
+        description: name of the tenant
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: query
+        description: query to fetch result for
+        schema:
+          type: string
+      - in: query
+        name: time
+        description: Evaluation timestamp
+        schema:
+          type: string
+          format: rfc3339 | unix_timestamp
+      - in: query
+        name: timeout
+        description: Evaluation timeout
+        schema:
+          type: string
+    get:
+      tags:
+        - queryv1
+      summary: Evaluate instant queries for a tenant
+      operationId: getInstantQuery
+      description: |
+        You can evaluate instant queries for a tenant
+      responses:
+        "2XX":
+          description: instance query result for a tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryResponse"
+        "4XX":
+          description: Bad request
+        "5XX":
+          description: Server side error
+  /api/metrics/v1/{tenant}/api/v1/query_range:
+    parameters:
+      - in: path
+        name: tenant
+        description: name of the tenant
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: query
+        description: query to fetch result for
+        schema:
+          type: string
+      - in: query
+        name: start
+        description: Start timestamp
+        schema:
+          type: string
+          format: rfc3339 | unix_timestamp
+      - in: query
+        name: end
+        description: End timestamp
+        schema:
+          type: string
+          format: rfc3339 | unix_timestamp
+      - in: query
+        name: step
+        description: Query resolution step width
+        schema:
+          type: string
+      - in: query
+        name: timeout
+        description: Evaluation timeout
+        schema:
+          type: string
+    get:
+      tags:
+        - queryv1
+      summary: Evaluate range queries for a tenant
+      operationId: getRangeQuery
+      description: |
+        You can evaluate range queries for a tenant
+      responses:
+        "2XX":
+          description: range query result for a tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryRangeResponse"
+        "4XX":
+          description: Bad request
+        "5XX":
+          description: Server side error
+  /api/metrics/v1/{tenant}/api/v1/series:
+    parameters:
+      - in: path
+        name: tenant
+        description: name of the tenant
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: match[]
+        description: Repeated series selector argument
+        required: true
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: start
+        description: Start timestamp
+        schema:
+          type: string
+          format: rfc3339 | unix_timestamp
+      - in: query
+        name: end
+        description: End timestamp
+        schema:
+          type: string
+          format: rfc3339 | unix_timestamp
+    get:
+      tags:
+        - seriesv1
+      summary: Get series for a tenant
+      operationId: getSeries
+      description: |
+        You can get series for a tenant
+      responses:
+        "2XX":
+          description: series for a tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeriesResponse"
+        "4XX":
+          description: Bad request
+        "5XX":
+          description: Server side error
+components:
+  schemas:
+    SeriesResponse:
+      type: object
+      required:
+        - status
+      properties:
+        error:
+          type: string
+        errorType:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          example: "success"
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: string
+    QueryResponse:
+      type: object
+      required:
+        - status
+      properties:
+        error:
+          type: string
+        errorType:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          example: "success"
+        data:
+          type: object
+          $ref: "#/components/schemas/InstantQueryResponse"
+    QueryRangeResponse:
+      type: object
+      required:
+        - status
+      properties:
+        error:
+          type: string
+        errorType:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          example: "success"
+        data:
+          type: object
+          $ref: "#/components/schemas/RangeQueryResponse"
+    LabelsResponse:
+      type: object
+      required:
+        - status
+      properties:
+        error:
+          type: string
+        errorType:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          example: "success"
+        data:
+          type: array
+          items:
+            type: string
+            example: "__name__"
+    LabelValuesResponse:
+      type: object
+      required:
+        - status
+      properties:
+        error:
+          type: string
+        errorType:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          example: "success"
+        data:
+          type: array
+          items:
+            type: string
+            example: "node"
+    RulesResponse:
+      type: object
+      required:
+        - status
+      properties:
+        error:
+          type: string
+        errorType:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          example: "success"
+        data:
+          type: object
+          $ref: "#/components/schemas/Rules"
+    Rules:
+      type: object
+      required:
+        - groups
+      properties:
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleGroupEvaluated"
+    RulesRaw:
+      type: object
+      required:
+        - groups
+      properties:
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleGroup"
+    RuleGroup:
+      type: object
+      required:
+        - name
+        - rules
+      properties:
+        interval:
+          type: string
+          example: "1m"
+        name:
+          type: string
+          example: "telemeter.rules"
+        rules:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/RecordingRule"
+              - $ref: "#/components/schemas/AlertingRule"
+    RuleGroupEvaluated:
+      type: object
+      required:
+        - name
+        - rules
+      properties:
+        interval:
+          type: string
+          example: "1m"
+        name:
+          type: string
+          example: "telemeter.rules"
+        file:
+          type: string
+          example: "rules.yaml"
+        limit:
+          type: number
+          example: 0
+        evaluationTime:
+          type: number
+          example: 0.002900887
+        lastEvaluation:
+          type: string
+          example: "2022-02-20T15:32:12.759781322Z"
+        partialResponseStrategy:
+          type: string
+          example: "WARN"
+        rules:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/RecordingRuleEvaluated"
+              - $ref: "#/components/schemas/AlertingRuleEvaluated"
+    RecordingRule:
+      type: object
+      required:
+        - expr
+        - record
+      properties:
+        expr:
+          type: string
+          example: 'count by (name) (cluster{condition="halted"} == 1)'
+        record:
+          type: string
+          example: "count:cluster_halted"
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+    RecordingRuleEvaluated:
+      type: object
+      required:
+        - query
+        - name
+      properties:
+        query:
+          type: string
+          example: 'count by (name) (cluster{condition="halted"} == 1)'
+        name:
+          type: string
+          example: "count:cluster_halted"
+        health:
+          type: string
+          example: "ok"
+        evaluationTime:
+          type: number
+          example: 0.002900887
+        lastEvaluation:
+          type: string
+          example: "2022-02-20T15:32:12.759781322Z"
+        type:
+          type: string
+          enum:
+            - recording
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+    AlertingRule:
+      type: object
+      required:
+        - alert
+        - expr
+      properties:
+        alert:
+          type: string
+          example: "HighRequestLatency"
+        expr:
+          type: string
+          example: 'job:request_latency_seconds:mean5m{job="myjob"} > 0.5'
+        for:
+          type: string
+          example: "10m"
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+        annotations:
+          type: object
+          additionalProperties:
+            type: string
+    AlertingRuleEvaluated:
+      type: object
+      required:
+        - query
+        - name
+      properties:
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActiveAlert"
+        query:
+          type: string
+          example: 'job:request_latency_seconds:mean5m{job="myjob"} > 0.5'
+        name:
+          type: string
+          example: "count:cluster_halted"
+        health:
+          type: string
+          example: "ok"
+        evaluationTime:
+          type: number
+          example: 0.002900887
+        lastEvaluation:
+          type: string
+          example: "2022-02-20T15:32:12.759781322Z"
+        type:
+          type: string
+          enum:
+            - alerting
+        duration:
+          type: number
+          example: 600
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+        annotations:
+          type: object
+          additionalProperties:
+            type: string
+    ActiveAlert:
+      type: object
+      required:
+        - activeAt
+        - state
+        - value
+      properties:
+        activeAt:
+          type: string
+          example: "2018-07-04T20:27:12.60602144+02:00"
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+        annotations:
+          type: object
+          additionalProperties:
+            type: string
+        state:
+          type: string
+          example: "firing"
+        value:
+          type: string
+          example: "1e+00"
+    InstantQueryResponse:
+      type: object
+      required:
+        - resultType
+        - result
+      properties:
+        resultType:
+          type: string
+          enum:
+            - matrix
+            - vector
+            - scalar
+            - string
+        result:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/RangeVectors"
+              - $ref: "#/components/schemas/InstantVectors"
+              - $ref: "#/components/schemas/ScalarOrString"
+    RangeQueryResponse:
+      type: object
+      required:
+        - resultType
+        - result
+      properties:
+        resultType:
+          type: string
+          enum:
+            - matrix
+        result:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/RangeVectors"
+    RangeVectors:
+      type: object
+      required:
+        - metric
+        - values
+      properties:
+        metric:
+          type: object
+          additionalProperties:
+            type: string
+        values:
+          type: array
+          items:
+            type: array
+            $ref: "#/components/schemas/ScalarOrString"
+    InstantVectors:
+      type: object
+      required:
+        - metric
+        - values
+      properties:
+        metric:
+          type: object
+          additionalProperties:
+            type: string
+        values:
+          type: array
+          $ref: "#/components/schemas/ScalarOrString"
+    ScalarOrString:
+      type: array
+      items:
+        oneOf:
+          - type: string
+            format: unix_timestamp
+          - type: string
+            format: sample_value
