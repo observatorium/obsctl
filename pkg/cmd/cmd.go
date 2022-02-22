@@ -53,9 +53,6 @@ func NewObsctlCmd(ctx context.Context) *cobra.Command {
 		Long:             `CLI to interact with Observatorium`,
 		Version:          version.Version,
 		PersistentPreRun: setupLogger,
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "run called")
-		},
 	}
 
 	cmd.AddCommand(NewMetricsCmd(ctx))
