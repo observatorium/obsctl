@@ -6,11 +6,10 @@ A cli to interact with Observatorium instances.
 CLI to interact with Observatorium
 
 Usage:
-  obsctl [flags]
   obsctl [command]
 
 Available Commands:
-  context     View/Add/Edit context configuration.
+  context     Manage context configuration.
   help        Help about any command
   login       Login as a tenant. Will also save tenant details locally.
   metrics     Metrics based operations for Observatorium.

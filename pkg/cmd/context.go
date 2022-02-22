@@ -34,7 +34,10 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 
 	apiAddCmd.Flags().StringVar(&addURL, "url", "", "The URL for the Observatorium API.")
 	apiAddCmd.Flags().StringVar(&addName, "name", "", "Provide an optional name to easily refer to the Observatorium Instance.")
-	apiAddCmd.MarkFlagRequired("url")
+	err := apiAddCmd.MarkFlagRequired("url")
+	if err != nil {
+		panic(err)
+	}
 
 	var rmName string
 	apiRmCmd := &cobra.Command{
@@ -47,7 +50,10 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 	}
 
 	apiRmCmd.Flags().StringVar(&rmName, "name", "", "The name of the Observatorium API instance to remove.")
-	apiRmCmd.MarkFlagRequired("name")
+	err = apiRmCmd.MarkFlagRequired("name")
+	if err != nil {
+		panic(err)
+	}
 
 	switchCmd := &cobra.Command{
 		Use:   "switch",

@@ -28,7 +28,7 @@ const (
 	configFile    = "obs/config.json" // Path to obsctl auth config file.
 )
 
-// getConfigFilePath returns the obsctl config file path or the first string in override arguement.
+// getConfigFilePath returns the obsctl config file path or the first string in override argument.
 // Useful for testing.
 func getConfigFilePath(override ...string) (string, error) {
 	if len(override) != 0 {

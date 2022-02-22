@@ -40,7 +40,15 @@ func NewLoginCmd(ctx context.Context) *cobra.Command {
 
 	cmd.Flags().BoolVar(&disableOIDCCheck, "disable.oidc-check", false, "If set to true, OIDC flags will not be checked while saving tenant details locally.")
 
-	cmd.MarkFlagRequired("api")
-	cmd.MarkFlagRequired("tenant")
+	err := cmd.MarkFlagRequired("api")
+	if err != nil {
+		panic(err)
+	}
+
+	err = cmd.MarkFlagRequired("tenant")
+	if err != nil {
+		panic(err)
+	}
+
 	return cmd
 }
