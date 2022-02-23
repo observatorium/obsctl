@@ -168,7 +168,7 @@ func (cfg APIConfig) saveAPILocally(logger log.Logger, override ...string) error
 	}
 }
 
-// RemoveAPI removes a locally saved Observatorium API config. Logs if API name not saved.
+// RemoveAPI removes a locally saved Observatorium API config. Logs if API name is not saved or is set in context.
 func RemoveAPI(name string, logger log.Logger, override ...string) error {
 	configFilePath, err := getConfigFilePath(override...)
 	if err != nil {
@@ -190,7 +190,6 @@ func RemoveAPI(name string, logger log.Logger, override ...string) error {
 		// Check if API config exists and remove.
 		if _, ok := savedContent.APIs[name]; ok {
 			// Also if this is set to current, need to remove that.
-			// Fix this (not currently being set).
 			if savedContent.APIs[name].Name == savedContent.APIs[currentAPI].Name {
 				level.Info(logger).Log("msg", "Removing API that is current context")
 				savedContent.APIs[currentAPI] = APIConfig{}
