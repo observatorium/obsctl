@@ -2,15 +2,17 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
+	"net/url"
 
-	"github.com/observatorium/obsctl/pkg/auth"
+	"github.com/observatorium/obsctl/pkg/config"
 	"github.com/spf13/cobra"
 )
 
 func NewLoginCmd(ctx context.Context) *cobra.Command {
-	var tenantCfg auth.TenantConfig
-	var caFilePath string
+	tenantCfg := config.TenantConfig{OIDC: new(config.OIDCConfig)}
+	var api, caFilePath string
 	var disableOIDCCheck bool
 
 	cmd := &cobra.Command{
@@ -25,12 +27,34 @@ func NewLoginCmd(ctx context.Context) *cobra.Command {
 				}
 				tenantCfg.CAFile = body
 			}
-			return auth.Login(ctx, tenantCfg, disableOIDCCheck, logger)
+			conf, err := config.Read()
+			if err != nil {
+				return err
+			}
+
+			if _, ok := conf.APIs[config.APIName(api)]; !ok {
+				apiURL, err := url.Parse(api)
+				if err != nil {
+					return fmt.Errorf("%s is not a valid URL or existing api name", api)
+				}
+
+				api = apiURL.Host
+
+				if err := conf.AddAPI(config.APIName(api), apiURL.String()); err != nil {
+					return fmt.Errorf("adding new api: %w", err)
+				}
+			}
+
+			if _, err := tenantCfg.Client(ctx); err != nil {
+				return fmt.Errorf("creating authenticated client: %w", err)
+			}
+
+			return conf.AddTenant(config.TenantName(tenantCfg.Tenant), config.APIName(api), tenantCfg.Tenant, tenantCfg.OIDC)
 		},
 	}
 
 	cmd.Flags().StringVar(&tenantCfg.Tenant, "tenant", "", "The name of the tenant.")
-	cmd.Flags().StringVar(&tenantCfg.APIname, "api", "", "The name of the Observatorium API.")
+	cmd.Flags().StringVar(&api, "api", "", "The name of the Observatorium API.")
 
 	cmd.Flags().StringVar(&caFilePath, "ca", "", "Path to the TLS CA against which to verify the Observatorium API. If no server CA is specified, the client will use the system certificates.")
 	cmd.Flags().StringVar(&tenantCfg.OIDC.IssuerURL, "oidc.issuer-url", "", "The OIDC issuer URL, see https://openid.net/specs/openid-connect-discovery-1_0.html#IssuerDiscovery.")
