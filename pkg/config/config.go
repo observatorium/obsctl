@@ -11,8 +11,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// TODO: Add tests.
-
 const (
 	configFileName = "config.json"
 	configDirName  = "obsctl"
