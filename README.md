@@ -12,6 +12,7 @@ Available Commands:
   context     Manage context configuration.
   help        Help about any command
   login       Login as a tenant. Will also save tenant details locally.
+  logout      Logout a tenant. Will remove locally saved details.
   metrics     Metrics based operations for Observatorium.
 
 Flags:
@@ -29,7 +30,6 @@ Use "obsctl [command] --help" for more information about a command.
 Metrics based operations for Observatorium.
 
 Usage:
-  obsctl metrics [flags]
   obsctl metrics [command]
 
 Available Commands:

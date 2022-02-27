@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -53,11 +54,13 @@ type Config struct {
 	} `json:"current"`
 }
 
+// APIConfig represents configuration for an instance of Observatorium.
 type APIConfig struct {
 	URL      string                      `json:"url"`
 	Contexts map[TenantName]TenantConfig `json:"contexts"`
 }
 
+// TenantConfig represents configuration for a tenant.
 type TenantConfig struct {
 	Tenant string      `json:"tenant"`
 	CAFile []byte      `json:"ca"`
@@ -74,6 +77,7 @@ type OIDCConfig struct {
 	IssuerURL    string `json:"issuerURL"`
 }
 
+// Read loads configuration from disk.
 func Read(path ...string) (*Config, error) {
 	if err := ensureConfigDir(); err != nil {
 		return nil, err
@@ -94,6 +98,7 @@ func Read(path ...string) (*Config, error) {
 	return &cfg, nil
 }
 
+// Save writes current config to the disk.
 func (c *Config) Save() error {
 	if err := ensureConfigDir(); err != nil {
 		return err
@@ -113,16 +118,32 @@ func (c *Config) Save() error {
 }
 
 // AddAPI adds a new Observatorium API to the configuration and saves the config to disk.
-func (c *Config) AddAPI(name APIName, url string) error {
+// In case no name is provided, the hostname of the API URL is used instead.
+func (c *Config) AddAPI(name APIName, apiURL string) error {
 	if c.APIs == nil {
 		c.APIs = make(map[APIName]APIConfig)
+	}
+
+	url, err := url.Parse(apiURL)
+	if err != nil {
+		return fmt.Errorf("%s is not a valid URL", url)
+	}
+
+	// url.Parse might pass a URL with only path, so need to check here for scheme and host.
+	// As per docs: https://pkg.go.dev/net/url#Parse.
+	if url.Host == "" || url.Scheme == "" {
+		return fmt.Errorf("%s is not a valid URL", url)
+	}
+
+	if name == "" {
+		name = APIName(url.Host)
 	}
 
 	if _, ok := c.APIs[name]; ok {
 		return fmt.Errorf("api with name %s already exists", name)
 	}
 
-	c.APIs[name] = APIConfig{URL: url}
+	c.APIs[name] = APIConfig{URL: url.String()}
 
 	return c.Save()
 }
@@ -144,6 +165,7 @@ func (c *Config) RemoveAPI(name APIName) error {
 	return c.Save()
 }
 
+// AddTenant adds configuration for a tenant under an API and saves it to disk.
 func (c *Config) AddTenant(name TenantName, api APIName, tenant string, oidcCfg *OIDCConfig) error {
 	if _, ok := c.APIs[api]; !ok {
 		return fmt.Errorf("api with name %s doesn't exist", api)
@@ -174,6 +196,7 @@ func (c *Config) AddTenant(name TenantName, api APIName, tenant string, oidcCfg 
 	return c.Save()
 }
 
+// RemoveTenant removes configuration of a tenant under an API and saves changes to disk.
 func (c *Config) RemoveTenant(name TenantName, api APIName) error {
 	if _, ok := c.APIs[api]; !ok {
 		return fmt.Errorf("api with name %s doesn't exist", api)

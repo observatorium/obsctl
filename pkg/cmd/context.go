@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/go-kit/log/level"
@@ -28,23 +27,14 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 	apiAddCmd := &cobra.Command{
 		Use:   "add",
 		Short: "Add API configuration.",
-		Long:  "Add API configuration. If there is a previously saved config with the same name, it will be updated.",
+		Long:  "Add API configuration.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			conf, err := config.Read()
 			if err != nil {
 				return err
 			}
 
-			apiURL, err := url.Parse(addURL)
-			if err != nil {
-				return fmt.Errorf("%s is not a valid URL", addURL)
-			}
-
-			if addName == "" {
-				addName = apiURL.Host
-			}
-
-			return conf.AddAPI(config.APIName(addName), apiURL.String())
+			return conf.AddAPI(config.APIName(addName), addURL)
 		},
 	}
 
@@ -113,7 +103,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			// TODO: Add flag to display more details. Eg -verbose
+			// TODO(saswatamcode): Add flag to display more details. Eg -verbose
 			level.Info(logger).Log("msg", fmt.Sprintf("The current context is: %s/%s", conf.Current.API, conf.Current.Tenant))
 			return nil
 		},

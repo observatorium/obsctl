@@ -4,25 +4,29 @@ import (
 	"context"
 
 	"github.com/go-kit/log/level"
+	"github.com/observatorium/obsctl/pkg/config"
 	"github.com/spf13/cobra"
 )
 
+// TODO(saswatamcode): Add flags for URL query params.
 func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
 		Short: "Read series, labels & rules (JSON/YAML) of a tenant.",
 		Long:  "Read series, labels & rules (JSON/YAML) of a tenant.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "get called")
-		},
 	}
 
 	seriesCmd := &cobra.Command{
 		Use:   "series",
 		Short: "Get series of a tenant.",
 		Long:  "Get series of a tenant..",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "series called")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			b, err := config.DoGetReq(ctx, "/api/v1/series")
+			if err != nil {
+				return err
+			}
+			level.Info(logger).Log("response", string(b))
+			return nil
 		},
 	}
 
@@ -30,26 +34,43 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Use:   "labels",
 		Short: "Get labels of a tenant.",
 		Long:  "Get labels of a tenant.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "labels called")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			b, err := config.DoGetReq(ctx, "/api/v1/labels")
+			if err != nil {
+				return err
+			}
+			level.Info(logger).Log("response", string(b))
+			return nil
 		},
 	}
 
+	var labelName string
 	labelValuesCmd := &cobra.Command{
 		Use:   "labelvalues",
 		Short: "Get label values of a tenant.",
 		Long:  "Get label values of a tenant.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "label values called")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			b, err := config.DoGetReq(ctx, "/api/v1/label/"+labelName+"/values")
+			if err != nil {
+				return err
+			}
+			level.Info(logger).Log("response", string(b))
+			return nil
 		},
 	}
+	labelValuesCmd.Flags().StringVar(&labelName, "name", "", "Name of the label to fetch values for.")
 
 	rulesCmd := &cobra.Command{
 		Use:   "rules",
 		Short: "Get rules of a tenant.",
 		Long:  "Get rules of a tenant.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "rules called")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			b, err := config.DoGetReq(ctx, "/api/v1/rules")
+			if err != nil {
+				return err
+			}
+			level.Info(logger).Log("response", string(b))
+			return nil
 		},
 	}
 
@@ -57,8 +78,13 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Use:   "rules.raw",
 		Short: "Get configured rules of a tenant.",
 		Long:  "Get configured rules of a tenant.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "rules.raw called")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			b, err := config.DoGetReq(ctx, "/api/v1/rules/raw")
+			if err != nil {
+				return err
+			}
+			level.Info(logger).Log("response", string(b))
+			return nil
 		},
 	}
 
@@ -71,6 +97,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
+// TODO(saswatamcode): Handle operations other than GET.
 func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "set",
@@ -106,9 +133,6 @@ func NewMetricsCmd(ctx context.Context) *cobra.Command {
 		Use:   "metrics",
 		Short: "Metrics based operations for Observatorium.",
 		Long:  "Metrics based operations for Observatorium.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "metrics called")
-		},
 	}
 
 	cmd.AddCommand(NewMetricsGetCmd(ctx))

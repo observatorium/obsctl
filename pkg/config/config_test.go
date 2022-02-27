@@ -276,6 +276,44 @@ func TestAddAPI(t *testing.T) {
 
 		testutil.Equals(t, cfg.APIs, exp)
 	})
+
+	t.Run("api with no name", func(t *testing.T) {
+		cfg := Config{
+			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
+			APIs: map[APIName]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
+				}},
+			},
+		}
+
+		testutil.Ok(t, cfg.AddAPI("", "https://prod.api:8080"))
+
+		exp := map[APIName]APIConfig{
+			"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+				"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
+			}},
+			"prod.api:8080": {URL: "https://prod.api:8080", Contexts: nil},
+		}
+
+		testutil.Equals(t, cfg.APIs, exp)
+	})
+
+	t.Run("api with no name and invalid url", func(t *testing.T) {
+		cfg := Config{
+			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
+			APIs: map[APIName]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
+				}},
+			},
+		}
+
+		err := cfg.AddAPI("", "abcdefghijk")
+		testutil.NotOk(t, err)
+
+		testutil.Equals(t, fmt.Errorf("abcdefghijk is not a valid URL"), err)
+	})
 }
 
 func TestRemoveAPI(t *testing.T) {
