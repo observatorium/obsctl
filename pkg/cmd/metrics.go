@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/go-kit/log/level"
 	"github.com/observatorium/obsctl/pkg/config"
@@ -25,8 +27,8 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			level.Info(logger).Log("response", string(b))
-			return nil
+
+			return prettyPrintJSON(b)
 		},
 	}
 
@@ -39,8 +41,8 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			level.Info(logger).Log("response", string(b))
-			return nil
+
+			return prettyPrintJSON(b)
 		},
 	}
 
@@ -54,8 +56,8 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			level.Info(logger).Log("response", string(b))
-			return nil
+
+			return prettyPrintJSON(b)
 		},
 	}
 	labelValuesCmd.Flags().StringVar(&labelName, "name", "", "Name of the label to fetch values for.")
@@ -69,8 +71,8 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			level.Info(logger).Log("response", string(b))
-			return nil
+
+			return prettyPrintJSON(b)
 		},
 	}
 
@@ -83,7 +85,8 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			level.Info(logger).Log("response", string(b))
+
+			fmt.Fprintln(os.Stdout, string(b))
 			return nil
 		},
 	}

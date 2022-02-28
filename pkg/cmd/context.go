@@ -3,9 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
-	"github.com/go-kit/log/level"
 	"github.com/observatorium/obsctl/pkg/config"
 	"github.com/spf13/cobra"
 )
@@ -104,7 +104,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 			}
 
 			// TODO(saswatamcode): Add flag to display more details. Eg -verbose
-			level.Info(logger).Log("msg", fmt.Sprintf("The current context is: %s/%s", conf.Current.API, conf.Current.Tenant))
+			fmt.Fprintf(os.Stdout, "The current context is: %s/%s\n", conf.Current.API, conf.Current.Tenant)
 			return nil
 		},
 	}
