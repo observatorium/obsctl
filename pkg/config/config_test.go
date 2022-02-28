@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/efficientgo/tools/core/pkg/testutil"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 )
 
 func TestSave(t *testing.T) {
@@ -16,15 +18,16 @@ func TestSave(t *testing.T) {
 	testutil.Ok(t, err)
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-
 	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+
+	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
 
 	t.Run("empty config check", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
 		}
 
-		testutil.Ok(t, cfg.Save())
+		testutil.Ok(t, cfg.Save(tlogger))
 
 		b, err := os.ReadFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"))
 		testutil.Ok(t, err)
@@ -44,7 +47,7 @@ func TestSave(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.Save())
+		testutil.Ok(t, cfg.Save(tlogger))
 
 		b, err := os.ReadFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"))
 		testutil.Ok(t, err)
@@ -66,7 +69,7 @@ func TestSave(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.Save())
+		testutil.Ok(t, cfg.Save(tlogger))
 
 		b, err := os.ReadFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"))
 		testutil.Ok(t, err)
@@ -93,7 +96,7 @@ func TestSave(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.Save())
+		testutil.Ok(t, cfg.Save(tlogger))
 
 		b, err := os.ReadFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"))
 		testutil.Ok(t, err)
@@ -111,17 +114,18 @@ func TestRead(t *testing.T) {
 	testutil.Ok(t, err)
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-
 	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+
+	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
 
 	t.Run("empty config check", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
 		}
 
-		testutil.Ok(t, cfg.Save())
+		testutil.Ok(t, cfg.Save(tlogger))
 
-		cfgExp, err := Read(filepath.Join(tmpDir, "obsctl", "test", "config.json"))
+		cfgExp, err := Read(tlogger, filepath.Join(tmpDir, "obsctl", "test", "config.json"))
 		testutil.Ok(t, err)
 
 		testutil.Equals(t, cfg, *cfgExp)
@@ -135,9 +139,9 @@ func TestRead(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.Save())
+		testutil.Ok(t, cfg.Save(tlogger))
 
-		cfgExp, err := Read(filepath.Join(tmpDir, "obsctl", "test", "config.json"))
+		cfgExp, err := Read(tlogger, filepath.Join(tmpDir, "obsctl", "test", "config.json"))
 		testutil.Ok(t, err)
 
 		testutil.Equals(t, cfg, *cfgExp)
@@ -153,9 +157,9 @@ func TestRead(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.Save())
+		testutil.Ok(t, cfg.Save(tlogger))
 
-		cfgExp, err := Read(filepath.Join(tmpDir, "obsctl", "test", "config.json"))
+		cfgExp, err := Read(tlogger, filepath.Join(tmpDir, "obsctl", "test", "config.json"))
 		testutil.Ok(t, err)
 
 		testutil.Equals(t, cfg, *cfgExp)
@@ -176,9 +180,9 @@ func TestRead(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.Save())
+		testutil.Ok(t, cfg.Save(tlogger))
 
-		cfgExp, err := Read(filepath.Join(tmpDir, "obsctl", "test", "config.json"))
+		cfgExp, err := Read(tlogger, filepath.Join(tmpDir, "obsctl", "test", "config.json"))
 		testutil.Ok(t, err)
 
 		testutil.Equals(t, cfg, *cfgExp)
@@ -193,12 +197,14 @@ func TestAddAPI(t *testing.T) {
 
 	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
 
+	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
+
 	t.Run("first or empty config", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
 		}
 
-		testutil.Ok(t, cfg.AddAPI("stage", "http://stage.obs.api"))
+		testutil.Ok(t, cfg.AddAPI(tlogger, "stage", "http://stage.obs.api"))
 
 		exp := map[APIName]APIConfig{"stage": {URL: "http://stage.obs.api", Contexts: nil}}
 
@@ -213,7 +219,7 @@ func TestAddAPI(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.AddAPI("prod", "https://prod.api:8080"))
+		testutil.Ok(t, cfg.AddAPI(tlogger, "prod", "https://prod.api:8080"))
 
 		exp := map[APIName]APIConfig{
 			"stage": {URL: "https://stage.api:9090", Contexts: nil},
@@ -233,7 +239,7 @@ func TestAddAPI(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.AddAPI("prod", "https://prod.api:8080"))
+		testutil.Ok(t, cfg.AddAPI(tlogger, "prod", "https://prod.api:8080"))
 
 		exp := map[APIName]APIConfig{
 			"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
@@ -260,7 +266,7 @@ func TestAddAPI(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.AddAPI("test", "https://test.api:8080"))
+		testutil.Ok(t, cfg.AddAPI(tlogger, "test", "https://test.api:8080"))
 
 		exp := map[APIName]APIConfig{
 			"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
@@ -287,7 +293,7 @@ func TestAddAPI(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.AddAPI("", "https://prod.api:8080"))
+		testutil.Ok(t, cfg.AddAPI(tlogger, "", "https://prod.api:8080"))
 
 		exp := map[APIName]APIConfig{
 			"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
@@ -309,7 +315,7 @@ func TestAddAPI(t *testing.T) {
 			},
 		}
 
-		err := cfg.AddAPI("", "abcdefghijk")
+		err := cfg.AddAPI(tlogger, "", "abcdefghijk")
 		testutil.NotOk(t, err)
 
 		testutil.Equals(t, fmt.Errorf("abcdefghijk is not a valid URL"), err)
@@ -324,12 +330,14 @@ func TestRemoveAPI(t *testing.T) {
 
 	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
 
+	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
+
 	t.Run("empty config", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
 		}
 
-		err := cfg.RemoveAPI("stage")
+		err := cfg.RemoveAPI(tlogger, "stage")
 		testutil.NotOk(t, err)
 		testutil.Equals(t, fmt.Errorf("api with name stage doesn't exist"), err)
 	})
@@ -342,7 +350,7 @@ func TestRemoveAPI(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.RemoveAPI("stage"))
+		testutil.Ok(t, cfg.RemoveAPI(tlogger, "stage"))
 		testutil.Equals(t, cfg.APIs, map[APIName]APIConfig{})
 	})
 
@@ -356,7 +364,7 @@ func TestRemoveAPI(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.RemoveAPI("stage"))
+		testutil.Ok(t, cfg.RemoveAPI(tlogger, "stage"))
 		testutil.Equals(t, cfg.APIs, map[APIName]APIConfig{})
 	})
 
@@ -375,7 +383,7 @@ func TestRemoveAPI(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.RemoveAPI("stage"))
+		testutil.Ok(t, cfg.RemoveAPI(tlogger, "stage"))
 
 		exp := map[APIName]APIConfig{
 			"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
@@ -409,7 +417,7 @@ func TestRemoveAPI(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.RemoveAPI("stage"))
+		testutil.Ok(t, cfg.RemoveAPI(tlogger, "stage"))
 
 		exp := map[APIName]APIConfig{
 			"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
@@ -434,8 +442,9 @@ func TestAddTenant(t *testing.T) {
 	testutil.Ok(t, err)
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-
 	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+
+	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
 
 	testoidc := &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}
 
@@ -447,7 +456,7 @@ func TestAddTenant(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.AddTenant("first", "stage", "first", testoidc))
+		testutil.Ok(t, cfg.AddTenant(tlogger, "first", "stage", "first", testoidc))
 
 		exp := map[APIName]APIConfig{
 			"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
@@ -476,7 +485,7 @@ func TestAddTenant(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.AddTenant("second", "stage", "second", testoidc))
+		testutil.Ok(t, cfg.AddTenant(tlogger, "second", "stage", "second", testoidc))
 
 		exp := map[APIName]APIConfig{
 			"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
@@ -506,7 +515,7 @@ func TestAddTenant(t *testing.T) {
 			},
 		}
 
-		err := cfg.AddTenant("second", "stage", "second", testoidc)
+		err := cfg.AddTenant(tlogger, "second", "stage", "second", testoidc)
 		testutil.NotOk(t, err)
 
 		testutil.Equals(t, fmt.Errorf("tenant with name second already exists in api stage"), err)
@@ -523,7 +532,7 @@ func TestAddTenant(t *testing.T) {
 			},
 		}
 
-		err := cfg.AddTenant("second", "prod", "second", testoidc)
+		err := cfg.AddTenant(tlogger, "second", "prod", "second", testoidc)
 		testutil.NotOk(t, err)
 
 		testutil.Equals(t, fmt.Errorf("api with name prod doesn't exist"), err)
@@ -538,12 +547,14 @@ func TestRemoveTenant(t *testing.T) {
 
 	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
 
+	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
+
 	t.Run("empty config", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
 		}
 
-		err := cfg.RemoveTenant("first", "stage")
+		err := cfg.RemoveTenant(tlogger, "first", "stage")
 		testutil.NotOk(t, err)
 		testutil.Equals(t, fmt.Errorf("api with name stage doesn't exist"), err)
 	})
@@ -556,7 +567,7 @@ func TestRemoveTenant(t *testing.T) {
 			},
 		}
 
-		err := cfg.RemoveTenant("first", "stage")
+		err := cfg.RemoveTenant(tlogger, "first", "stage")
 
 		testutil.NotOk(t, err)
 		testutil.Equals(t, fmt.Errorf("tenant with name first doesn't exist in api stage"), err)
@@ -572,7 +583,7 @@ func TestRemoveTenant(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.RemoveTenant("first", "stage"))
+		testutil.Ok(t, cfg.RemoveTenant(tlogger, "first", "stage"))
 
 		testutil.Equals(t, cfg.APIs, map[APIName]APIConfig{"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{}}})
 	})
@@ -592,8 +603,8 @@ func TestRemoveTenant(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.RemoveTenant("second", "stage"))
-		testutil.Ok(t, cfg.RemoveTenant("first", "prod"))
+		testutil.Ok(t, cfg.RemoveTenant(tlogger, "second", "stage"))
+		testutil.Ok(t, cfg.RemoveTenant(tlogger, "first", "prod"))
 
 		exp := map[APIName]APIConfig{
 			"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
@@ -613,7 +624,6 @@ func TestGetCurrent(t *testing.T) {
 	testutil.Ok(t, err)
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-
 	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
 
 	t.Run("empty config", func(t *testing.T) {
@@ -668,15 +678,16 @@ func TestSetCurrent(t *testing.T) {
 	testutil.Ok(t, err)
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-
 	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+
+	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
 
 	t.Run("empty config", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
 		}
 
-		err := cfg.SetCurrent("stage", "first")
+		err := cfg.SetCurrent(tlogger, "stage", "first")
 		testutil.NotOk(t, err)
 		testutil.Equals(t, fmt.Errorf("api with name stage doesn't exist"), err)
 	})
@@ -689,7 +700,7 @@ func TestSetCurrent(t *testing.T) {
 			},
 		}
 
-		err := cfg.SetCurrent("stage", "first")
+		err := cfg.SetCurrent(tlogger, "stage", "first")
 
 		testutil.NotOk(t, err)
 		testutil.Equals(t, fmt.Errorf("tenant with name first doesn't exist in api stage"), err)
@@ -710,7 +721,7 @@ func TestSetCurrent(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.SetCurrent("prod", "first"))
+		testutil.Ok(t, cfg.SetCurrent(tlogger, "prod", "first"))
 
 		testutil.Equals(t, cfg.Current, struct {
 			API    APIName    `json:"api"`
@@ -743,7 +754,7 @@ func TestSetCurrent(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.SetCurrent("prod", "first"))
+		testutil.Ok(t, cfg.SetCurrent(tlogger, "prod", "first"))
 
 		testutil.Equals(t, cfg.Current, struct {
 			API    APIName    `json:"api"`

@@ -23,7 +23,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get series of a tenant.",
 		Long:  "Get series of a tenant..",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoGetReq(ctx, "/api/v1/series")
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/series")
 			if err != nil {
 				return err
 			}
@@ -37,7 +37,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get labels of a tenant.",
 		Long:  "Get labels of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoGetReq(ctx, "/api/v1/labels")
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/labels")
 			if err != nil {
 				return err
 			}
@@ -52,7 +52,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get label values of a tenant.",
 		Long:  "Get label values of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoGetReq(ctx, "/api/v1/label/"+labelName+"/values")
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/label/"+labelName+"/values")
 			if err != nil {
 				return err
 			}
@@ -67,7 +67,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get rules of a tenant.",
 		Long:  "Get rules of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoGetReq(ctx, "/api/v1/rules")
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules")
 			if err != nil {
 				return err
 			}
@@ -81,7 +81,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get configured rules of a tenant.",
 		Long:  "Get configured rules of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoGetReq(ctx, "/api/v1/rules/raw")
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules/raw")
 			if err != nil {
 				return err
 			}

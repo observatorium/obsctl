@@ -14,12 +14,12 @@ func NewLogoutCmd(ctx context.Context) *cobra.Command {
 		Short: "Logout a tenant. Will remove locally saved details.",
 		Long:  "Logout a tenant. Will remove locally saved details.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := config.Read()
+			conf, err := config.Read(logger)
 			if err != nil {
 				return err
 			}
 
-			return conf.RemoveTenant(config.TenantName(tenantName), config.APIName(apiName))
+			return conf.RemoveTenant(logger, config.TenantName(tenantName), config.APIName(apiName))
 		},
 	}
 

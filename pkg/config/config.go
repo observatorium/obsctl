@@ -9,6 +9,8 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"golang.org/x/oauth2"
 )
 
@@ -78,7 +80,7 @@ type OIDCConfig struct {
 }
 
 // Read loads configuration from disk.
-func Read(path ...string) (*Config, error) {
+func Read(logger log.Logger, path ...string) (*Config, error) {
 	if err := ensureConfigDir(); err != nil {
 		return nil, err
 	}
@@ -95,11 +97,13 @@ func Read(path ...string) (*Config, error) {
 		return nil, fmt.Errorf("parsing config file: %w", err)
 	}
 
+	level.Debug(logger).Log("msg", "read and parsed config file")
+
 	return &cfg, nil
 }
 
 // Save writes current config to the disk.
-func (c *Config) Save() error {
+func (c *Config) Save(logger log.Logger) error {
 	if err := ensureConfigDir(); err != nil {
 		return err
 	}
@@ -114,14 +118,17 @@ func (c *Config) Save() error {
 		return fmt.Errorf("writing config: %w", err)
 	}
 
+	level.Debug(logger).Log("msg", "saved config in config file")
+
 	return nil
 }
 
 // AddAPI adds a new Observatorium API to the configuration and saves the config to disk.
 // In case no name is provided, the hostname of the API URL is used instead.
-func (c *Config) AddAPI(name APIName, apiURL string) error {
+func (c *Config) AddAPI(logger log.Logger, name APIName, apiURL string) error {
 	if c.APIs == nil {
 		c.APIs = make(map[APIName]APIConfig)
+		level.Debug(logger).Log("msg", "initialize config API map")
 	}
 
 	url, err := url.Parse(apiURL)
@@ -137,6 +144,7 @@ func (c *Config) AddAPI(name APIName, apiURL string) error {
 
 	if name == "" {
 		name = APIName(url.Host)
+		level.Debug(logger).Log("msg", "use hostname as name")
 	}
 
 	if _, ok := c.APIs[name]; ok {
@@ -145,12 +153,12 @@ func (c *Config) AddAPI(name APIName, apiURL string) error {
 
 	c.APIs[name] = APIConfig{URL: url.String()}
 
-	return c.Save()
+	return c.Save(logger)
 }
 
 // RemoveAPI removes a locally saved Observatorium API config as well as its tenants.
 // If the current context is pointing to the API being removed, the context is emptied.
-func (c *Config) RemoveAPI(name APIName) error {
+func (c *Config) RemoveAPI(logger log.Logger, name APIName) error {
 	if _, ok := c.APIs[name]; !ok {
 		return fmt.Errorf("api with name %s doesn't exist", name)
 	}
@@ -158,15 +166,17 @@ func (c *Config) RemoveAPI(name APIName) error {
 	if c.Current.API == name {
 		c.Current.API = ""
 		c.Current.Tenant = ""
+		level.Debug(logger).Log("msg", "empty current config")
 	}
 
 	delete(c.APIs, name)
 
-	return c.Save()
+	return c.Save(logger)
 }
 
 // AddTenant adds configuration for a tenant under an API and saves it to disk.
-func (c *Config) AddTenant(name TenantName, api APIName, tenant string, oidcCfg *OIDCConfig) error {
+// Also, sets new tenant to current in case current config is empty.
+func (c *Config) AddTenant(logger log.Logger, name TenantName, api APIName, tenant string, oidcCfg *OIDCConfig) error {
 	if _, ok := c.APIs[api]; !ok {
 		return fmt.Errorf("api with name %s doesn't exist", api)
 	}
@@ -191,13 +201,14 @@ func (c *Config) AddTenant(name TenantName, api APIName, tenant string, oidcCfg 
 	if c.Current.API == "" && c.Current.Tenant == "" {
 		c.Current.API = api
 		c.Current.Tenant = name
+		level.Debug(logger).Log("msg", "set new tenant as current")
 	}
 
-	return c.Save()
+	return c.Save(logger)
 }
 
 // RemoveTenant removes configuration of a tenant under an API and saves changes to disk.
-func (c *Config) RemoveTenant(name TenantName, api APIName) error {
+func (c *Config) RemoveTenant(logger log.Logger, name TenantName, api APIName) error {
 	if _, ok := c.APIs[api]; !ok {
 		return fmt.Errorf("api with name %s doesn't exist", api)
 	}
@@ -208,7 +219,7 @@ func (c *Config) RemoveTenant(name TenantName, api APIName) error {
 
 	delete(c.APIs[api].Contexts, name)
 
-	return c.Save()
+	return c.Save(logger)
 }
 
 func (c *Config) GetContext(api APIName, tenant TenantName) (TenantConfig, APIConfig, error) {
@@ -233,7 +244,7 @@ func (c *Config) GetCurrent() (TenantConfig, APIConfig, error) {
 }
 
 // SetCurrent switches the current context to given api and tenant.
-func (c *Config) SetCurrent(api APIName, tenant TenantName) error {
+func (c *Config) SetCurrent(logger log.Logger, api APIName, tenant TenantName) error {
 	if _, ok := c.APIs[api]; !ok {
 		return fmt.Errorf("api with name %s doesn't exist", api)
 	}
@@ -245,5 +256,5 @@ func (c *Config) SetCurrent(api APIName, tenant TenantName) error {
 	c.Current.API = api
 	c.Current.Tenant = tenant
 
-	return c.Save()
+	return c.Save(logger)
 }

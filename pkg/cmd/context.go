@@ -29,12 +29,12 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 		Short: "Add API configuration.",
 		Long:  "Add API configuration.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := config.Read()
+			conf, err := config.Read(logger)
 			if err != nil {
 				return err
 			}
 
-			return conf.AddAPI(config.APIName(addName), addURL)
+			return conf.AddAPI(logger, config.APIName(addName), addURL)
 		},
 	}
 
@@ -52,12 +52,12 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 		Short: "Remove API configuration.",
 		Long:  "Remove API configuration. If set to current, current will be set to nil.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := config.Read()
+			conf, err := config.Read(logger)
 			if err != nil {
 				return err
 			}
 
-			return conf.RemoveAPI(config.APIName(rmName))
+			return conf.RemoveAPI(logger, config.APIName(rmName))
 		},
 	}
 
@@ -79,12 +79,12 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("invalid context name: use format <api>/<tenant>")
 			}
 
-			conf, err := config.Read()
+			conf, err := config.Read(logger)
 			if err != nil {
 				return err
 			}
 
-			return conf.SetCurrent(config.APIName(cntxt[0]), config.TenantName(cntxt[1]))
+			return conf.SetCurrent(logger, config.APIName(cntxt[0]), config.TenantName(cntxt[1]))
 		},
 	}
 
@@ -93,7 +93,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 		Short: "View current context configuration.",
 		Long:  "View current context configuration.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := config.Read()
+			conf, err := config.Read(logger)
 			if err != nil {
 				return err
 			}

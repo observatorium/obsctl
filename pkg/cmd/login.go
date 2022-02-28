@@ -26,23 +26,23 @@ func NewLoginCmd(ctx context.Context) *cobra.Command {
 				}
 				tenantCfg.CAFile = body
 			}
-			conf, err := config.Read()
+			conf, err := config.Read(logger)
 			if err != nil {
 				return err
 			}
 
 			// If api doesn't exist, can assume a URL has been provided.
 			if _, ok := conf.APIs[config.APIName(api)]; !ok {
-				if err := conf.AddAPI("", api); err != nil {
+				if err := conf.AddAPI(logger, "", api); err != nil {
 					return fmt.Errorf("adding new api: %w", err)
 				}
 			}
 
-			if _, err := tenantCfg.Client(ctx); err != nil {
+			if _, err := tenantCfg.Client(ctx, logger); err != nil {
 				return fmt.Errorf("creating authenticated client: %w", err)
 			}
 
-			return conf.AddTenant(config.TenantName(tenantCfg.Tenant), config.APIName(api), tenantCfg.Tenant, tenantCfg.OIDC)
+			return conf.AddTenant(logger, config.TenantName(tenantCfg.Tenant), config.APIName(api), tenantCfg.Tenant, tenantCfg.OIDC)
 		},
 	}
 
