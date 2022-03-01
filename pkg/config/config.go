@@ -151,7 +151,13 @@ func (c *Config) AddAPI(logger log.Logger, name APIName, apiURL string) error {
 		return fmt.Errorf("api with name %s already exists", name)
 	}
 
-	c.APIs[name] = APIConfig{URL: url.String()}
+	// Add trailing slash if not present.
+	parsedUrl := url.String()
+	if parsedUrl[len(parsedUrl)-1:] != "/" {
+		parsedUrl += "/"
+	}
+
+	c.APIs[name] = APIConfig{URL: parsedUrl}
 
 	return c.Save(logger)
 }

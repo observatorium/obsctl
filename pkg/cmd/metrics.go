@@ -61,6 +61,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		},
 	}
 	labelValuesCmd.Flags().StringVar(&labelName, "name", "", "Name of the label to fetch values for.")
+	labelValuesCmd.MarkFlagRequired("name")
 
 	rulesCmd := &cobra.Command{
 		Use:   "rules",
@@ -107,7 +108,7 @@ func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 		Short: "Write Prometheus Rules configuration for a tenant.",
 		Long:  "Write Prometheus Rules configuration for a tenant.",
 		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "set called")
+			level.Info(logger).Log("msg", "set not implemented yet")
 		},
 	}
 
@@ -124,7 +125,7 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 		Example: `obsctl query "prometheus_http_request_total"`,
 		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "query called")
+			level.Info(logger).Log("msg", "query not implemented yet")
 		},
 	}
 
