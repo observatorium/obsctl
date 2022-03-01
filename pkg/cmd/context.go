@@ -109,9 +109,38 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 		},
 	}
 
+	listCmd := &cobra.Command{
+		Use:   "list",
+		Short: "View all context configuration.",
+		Long:  "View all context configuration.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			conf, err := config.Read(logger)
+			if err != nil {
+				return err
+			}
+
+			for k, v := range conf.APIs {
+				fmt.Fprintf(os.Stdout, "%s\n", string(k))
+				for kc := range v.Contexts {
+					fmt.Fprintf(os.Stdout, "\t- %s\n", string(kc))
+				}
+			}
+
+			_, _, err = conf.GetCurrent()
+			if err != nil {
+				return err
+			}
+
+			// TODO(saswatamcode): Add flag to display more details. Eg -verbose
+			fmt.Fprintf(os.Stdout, "\nThe current context is: %s/%s\n", conf.Current.API, conf.Current.Tenant)
+			return nil
+		},
+	}
+
 	cmd.AddCommand(apiCmd)
 	cmd.AddCommand(switchCmd)
 	cmd.AddCommand(currentCmd)
+	cmd.AddCommand(listCmd)
 
 	apiCmd.AddCommand(apiAddCmd)
 	apiCmd.AddCommand(apiRmCmd)
