@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-kit/log"
@@ -37,6 +38,14 @@ func (t *TenantConfig) Client(ctx context.Context, logger log.Logger) (*http.Cli
 		}
 
 		ts := ccc.TokenSource(ctx)
+
+		// If token has not expired, we can reuse.
+		if t.OIDC.Token != nil {
+			currentTime := time.Now()
+			if t.OIDC.Token.Expiry.After(currentTime) {
+				ts = oauth2.ReuseTokenSource(t.OIDC.Token, ts)
+			}
+		}
 
 		tkn, err := ts.Token()
 		if err != nil {
