@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/go-kit/log/level"
@@ -104,18 +105,37 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-// TODO(saswatamcode): Handle operations other than GET.
 func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
+	var ruleFilePath string
 	cmd := &cobra.Command{
 		Use:   "set",
 		Short: "Write Prometheus Rules configuration for a tenant.",
 		Long:  "Write Prometheus Rules configuration for a tenant.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "set not implemented yet")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			file, err := os.Open(ruleFilePath)
+			if err != nil {
+				return fmt.Errorf("opening rule file: %w", err)
+			}
+			defer file.Close()
+
+			data, err := ioutil.ReadAll(file)
+			if err != nil {
+				return fmt.Errorf("reading rule file: %w", err)
+			}
+
+			fmt.Fprintln(os.Stdout, string(data))
+
+			b, err := config.DoMetricsPutReqWithYAML(ctx, logger, "/api/v1/rules/raw", data)
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprintln(os.Stdout, string(b))
+			return nil
 		},
 	}
 
-	cmd.Flags().String("rule.file", "", "Path to Rules configuration file, which will be set for a tenant.")
+	cmd.Flags().StringVar(&ruleFilePath, "rule.file", "", "Path to Rules configuration file, which will be set for a tenant.")
 
 	return cmd
 }
