@@ -61,7 +61,10 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		},
 	}
 	labelValuesCmd.Flags().StringVar(&labelName, "name", "", "Name of the label to fetch values for.")
-	labelValuesCmd.MarkFlagRequired("name")
+	err := labelValuesCmd.MarkFlagRequired("name")
+	if err != nil {
+		panic(err)
+	}
 
 	rulesCmd := &cobra.Command{
 		Use:   "rules",
