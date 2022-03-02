@@ -318,7 +318,7 @@ func TestAddAPI(t *testing.T) {
 		err := cfg.AddAPI(tlogger, "", "abcdefghijk")
 		testutil.NotOk(t, err)
 
-		testutil.Equals(t, fmt.Errorf("abcdefghijk is not a valid URL"), err)
+		testutil.Equals(t, fmt.Errorf("abcdefghijk is not a valid URL (scheme: ,host: )"), err)
 	})
 
 	t.Run("api with no trailing slash", func(t *testing.T) {
@@ -341,6 +341,22 @@ func TestAddAPI(t *testing.T) {
 		}
 
 		testutil.Equals(t, cfg.APIs, exp)
+	})
+
+	t.Run("api with slash in name", func(t *testing.T) {
+		cfg := Config{
+			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
+			APIs: map[APIName]APIConfig{
+				"stage": {URL: "https://stage.api:9090/", Contexts: map[TenantName]TenantConfig{
+					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
+				}},
+			},
+		}
+
+		err := cfg.AddAPI(tlogger, "prod/123", "https://prod.api:8080")
+		testutil.NotOk(t, err)
+
+		testutil.Equals(t, fmt.Errorf("api name prod/123 cannot contain slashes"), err)
 	})
 }
 
@@ -559,6 +575,23 @@ func TestAddTenant(t *testing.T) {
 
 		testutil.Equals(t, fmt.Errorf("api with name prod doesn't exist"), err)
 	})
+
+	t.Run("tenant name has slash", func(t *testing.T) {
+		cfg := Config{
+			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
+			APIs: map[APIName]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
+					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
+				}},
+			},
+		}
+
+		err := cfg.AddTenant(tlogger, "test/123", "stage", "test/123", testoidc)
+		testutil.NotOk(t, err)
+
+		testutil.Equals(t, fmt.Errorf("tenant name test/123 cannot contain slashes"), err)
+	})
 }
 
 func TestRemoveTenant(t *testing.T) {
@@ -641,7 +674,7 @@ func TestRemoveTenant(t *testing.T) {
 	})
 }
 
-func TestGetCurrent(t *testing.T) {
+func TestGetCurrentContext(t *testing.T) {
 	tmpDir, err := ioutil.TempDir("", "test-save")
 	testutil.Ok(t, err)
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
@@ -653,7 +686,7 @@ func TestGetCurrent(t *testing.T) {
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
 		}
 
-		_, _, err := cfg.GetCurrent()
+		_, _, err := cfg.GetCurrentContext()
 		testutil.NotOk(t, err)
 		testutil.Equals(t, fmt.Errorf("current context is empty"), err)
 	})
@@ -680,7 +713,7 @@ func TestGetCurrent(t *testing.T) {
 			},
 		}
 
-		tenantConfig, apiConfig, err := cfg.GetCurrent()
+		tenantConfig, apiConfig, err := cfg.GetCurrentContext()
 		testutil.Ok(t, err)
 
 		tenantExp := TenantConfig{Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}}
@@ -695,7 +728,7 @@ func TestGetCurrent(t *testing.T) {
 	})
 }
 
-func TestSetCurrent(t *testing.T) {
+func TestSetCurrentContext(t *testing.T) {
 	tmpDir, err := ioutil.TempDir("", "test-save")
 	testutil.Ok(t, err)
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
@@ -709,7 +742,7 @@ func TestSetCurrent(t *testing.T) {
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
 		}
 
-		err := cfg.SetCurrent(tlogger, "stage", "first")
+		err := cfg.SetCurrentContext(tlogger, "stage", "first")
 		testutil.NotOk(t, err)
 		testutil.Equals(t, fmt.Errorf("api with name stage doesn't exist"), err)
 	})
@@ -722,7 +755,7 @@ func TestSetCurrent(t *testing.T) {
 			},
 		}
 
-		err := cfg.SetCurrent(tlogger, "stage", "first")
+		err := cfg.SetCurrentContext(tlogger, "stage", "first")
 
 		testutil.NotOk(t, err)
 		testutil.Equals(t, fmt.Errorf("tenant with name first doesn't exist in api stage"), err)
@@ -743,7 +776,7 @@ func TestSetCurrent(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.SetCurrent(tlogger, "prod", "first"))
+		testutil.Ok(t, cfg.SetCurrentContext(tlogger, "prod", "first"))
 
 		testutil.Equals(t, cfg.Current, struct {
 			API    APIName    `json:"api"`
@@ -776,7 +809,7 @@ func TestSetCurrent(t *testing.T) {
 			},
 		}
 
-		testutil.Ok(t, cfg.SetCurrent(tlogger, "prod", "first"))
+		testutil.Ok(t, cfg.SetCurrentContext(tlogger, "prod", "first"))
 
 		testutil.Equals(t, cfg.Current, struct {
 			API    APIName    `json:"api"`

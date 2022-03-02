@@ -1,17 +1,23 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
+	"time"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 const (
@@ -79,6 +85,74 @@ type OIDCConfig struct {
 	IssuerURL    string `json:"issuerURL"`
 }
 
+// Client returns a OAuth2 HTTP client based on the configuration for a tenant.
+func (t *TenantConfig) Client(ctx context.Context, logger log.Logger) (*http.Client, error) {
+	if t.OIDC != nil {
+		provider, err := oidc.NewProvider(ctx, t.OIDC.IssuerURL)
+		if err != nil {
+			return nil, fmt.Errorf("constructing oidc provider: %w", err)
+		}
+
+		ccc := clientcredentials.Config{
+			ClientID:     t.OIDC.ClientID,
+			ClientSecret: t.OIDC.ClientSecret,
+			TokenURL:     provider.Endpoint().TokenURL,
+			Scopes:       []string{"openid", "offline_access"},
+		}
+
+		if t.OIDC.Audience != "" {
+			ccc.EndpointParams = url.Values{
+				"audience": []string{t.OIDC.Audience},
+			}
+		}
+
+		ts := ccc.TokenSource(ctx)
+
+		// If token has not expired, we can reuse.
+		if t.OIDC.Token != nil {
+			currentTime := time.Now()
+			if t.OIDC.Token.Expiry.After(currentTime) {
+				ts = oauth2.ReuseTokenSource(t.OIDC.Token, ts)
+			}
+		}
+
+		tkn, err := ts.Token()
+		if err != nil {
+			return nil, fmt.Errorf("fetching token: %w", err)
+		}
+
+		t.OIDC.Token = tkn
+
+		level.Debug(logger).Log("msg", "fetched token", "tenant", t.Tenant)
+
+		return oauth2.NewClient(ctx, ts), nil
+	}
+
+	return http.DefaultClient, nil
+}
+
+// Client returns an OAuth2 HTTP client based on the current context configuration.
+func (c *Config) Client(ctx context.Context, logger log.Logger) (*http.Client, error) {
+	tenant, _, err := c.GetCurrentContext()
+	if err != nil {
+		return nil, fmt.Errorf("getting current context: %w", err)
+	}
+
+	client, err := tenant.Client(ctx, logger)
+	if err != nil {
+		return nil, err
+	}
+
+	c.APIs[c.Current.API].Contexts[c.Current.Tenant] = tenant
+	if err := c.Save(logger); err != nil {
+		return nil, fmt.Errorf("updating token in config file: %w", err)
+	}
+
+	level.Debug(logger).Log("msg", "updated token in config file", "tenant", tenant.Tenant)
+
+	return client, nil
+}
+
 // Read loads configuration from disk.
 func Read(logger log.Logger, path ...string) (*Config, error) {
 	if err := ensureConfigDir(); err != nil {
@@ -139,12 +213,18 @@ func (c *Config) AddAPI(logger log.Logger, name APIName, apiURL string) error {
 	// url.Parse might pass a URL with only path, so need to check here for scheme and host.
 	// As per docs: https://pkg.go.dev/net/url#Parse.
 	if url.Host == "" || url.Scheme == "" {
-		return fmt.Errorf("%s is not a valid URL", url)
+		return fmt.Errorf("%s is not a valid URL (scheme: %s,host: %s)", url, url.Scheme, url.Host)
 	}
 
 	if name == "" {
+		// Host name cannot contain slashes, so need not check.
 		name = APIName(url.Host)
 		level.Debug(logger).Log("msg", "use hostname as name")
+	} else {
+		// Need to check due to semantics of context switch.
+		if strings.Contains(string(name), "/") {
+			return fmt.Errorf("api name %s cannot contain slashes", name)
+		}
 	}
 
 	if _, ok := c.APIs[name]; ok {
@@ -194,6 +274,11 @@ func (c *Config) AddTenant(logger log.Logger, name TenantName, api APIName, tena
 		c.APIs[api] = a
 	}
 
+	// Need to check due to semantics of context switch.
+	if strings.Contains(string(name), "/") {
+		return fmt.Errorf("tenant name %s cannot contain slashes", name)
+	}
+
 	if _, ok := c.APIs[api].Contexts[name]; ok {
 		return fmt.Errorf("tenant with name %s already exists in api %s", name, api)
 	}
@@ -241,7 +326,7 @@ func (c *Config) GetContext(api APIName, tenant TenantName) (TenantConfig, APICo
 }
 
 // GetCurrentContext returns the currently set context i.e, the current API and tenant configuration.
-func (c *Config) GetCurrent() (TenantConfig, APIConfig, error) {
+func (c *Config) GetCurrentContext() (TenantConfig, APIConfig, error) {
 	if c.Current.API == "" || c.Current.Tenant == "" {
 		return TenantConfig{}, APIConfig{}, fmt.Errorf("current context is empty")
 	}
@@ -249,14 +334,18 @@ func (c *Config) GetCurrent() (TenantConfig, APIConfig, error) {
 	return c.GetContext(c.Current.API, c.Current.Tenant)
 }
 
-// SetCurrent switches the current context to given api and tenant.
-func (c *Config) SetCurrent(logger log.Logger, api APIName, tenant TenantName) error {
+// SetCurrentContext switches the current context to given api and tenant.
+func (c *Config) SetCurrentContext(logger log.Logger, api APIName, tenant TenantName) error {
 	if _, ok := c.APIs[api]; !ok {
 		return fmt.Errorf("api with name %s doesn't exist", api)
 	}
 
 	if _, ok := c.APIs[api].Contexts[tenant]; !ok {
 		return fmt.Errorf("tenant with name %s doesn't exist in api %s", tenant, api)
+	}
+
+	if c.Current.API == api && c.Current.Tenant == tenant {
+		level.Debug(logger).Log("msg", "context is the same as current")
 	}
 
 	c.Current.API = api

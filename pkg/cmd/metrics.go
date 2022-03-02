@@ -22,7 +22,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	seriesCmd := &cobra.Command{
 		Use:   "series",
 		Short: "Get series of a tenant.",
-		Long:  "Get series of a tenant..",
+		Long:  "Get series of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/series")
 			if err != nil {

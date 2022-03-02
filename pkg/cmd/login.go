@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net/url"
 
 	"github.com/observatorium/obsctl/pkg/config"
 	"github.com/spf13/cobra"
@@ -32,24 +31,12 @@ func NewLoginCmd(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			// If api doesn't exist, can assume a URL has been provided.
 			if _, ok := conf.APIs[config.APIName(api)]; !ok {
-				if err := conf.AddAPI(logger, "", api); err != nil {
-					return fmt.Errorf("adding new api: %w", err)
-				}
+				return fmt.Errorf("api name %s does not exist, please add it in via 'context api add'", api)
 			}
 
 			if _, err := tenantCfg.Client(ctx, logger); err != nil {
 				return fmt.Errorf("creating authenticated client: %w", err)
-			}
-
-			// If it is URL, then it was saved with host name, otherwise just api name
-			u, err := url.Parse(api)
-			if err != nil {
-				return fmt.Errorf("parsing url: %w", err)
-			}
-			if u.Host != "" || u.Scheme != "" {
-				return conf.AddTenant(logger, config.TenantName(tenantCfg.Tenant), config.APIName(u.Host), tenantCfg.Tenant, tenantCfg.OIDC)
 			}
 
 			return conf.AddTenant(logger, config.TenantName(tenantCfg.Tenant), config.APIName(api), tenantCfg.Tenant, tenantCfg.OIDC)
@@ -57,7 +44,7 @@ func NewLoginCmd(ctx context.Context) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&tenantCfg.Tenant, "tenant", "", "The name of the tenant.")
-	cmd.Flags().StringVar(&api, "api", "", "The name of the Observatorium API that has been saved. Can also accept a new URL which would be saved with host name locally.")
+	cmd.Flags().StringVar(&api, "api", "", "The name of the Observatorium API that has been saved previously.")
 
 	cmd.Flags().StringVar(&caFilePath, "ca", "", "Path to the TLS CA against which to verify the Observatorium API. If no server CA is specified, the client will use the system certificates.")
 	cmd.Flags().StringVar(&tenantCfg.OIDC.IssuerURL, "oidc.issuer-url", "", "The OIDC issuer URL, see https://openid.net/specs/openid-connect-discovery-1_0.html#IssuerDiscovery.")

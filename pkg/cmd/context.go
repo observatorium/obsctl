@@ -84,7 +84,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			return conf.SetCurrent(logger, config.APIName(cntxt[0]), config.TenantName(cntxt[1]))
+			return conf.SetCurrentContext(logger, config.APIName(cntxt[0]), config.TenantName(cntxt[1]))
 		},
 	}
 
@@ -98,7 +98,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			_, _, err = conf.GetCurrent()
+			_, _, err = conf.GetCurrentContext()
 			if err != nil {
 				return err
 			}
@@ -126,7 +126,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 				}
 			}
 
-			_, _, err = conf.GetCurrent()
+			_, _, err = conf.GetCurrentContext()
 			if err != nil {
 				return err
 			}
