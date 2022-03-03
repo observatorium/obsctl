@@ -50,7 +50,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 	apiRmCmd := &cobra.Command{
 		Use:   "rm",
 		Short: "Remove API configuration.",
-		Long:  "Remove API configuration. If set to current, current will be set to nil.",
+		Long:  "Remove API configuration. If only one API is saved, that will be removed. If set to current, current will be set to nil.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			conf, err := config.Read(logger)
 			if err != nil {
@@ -61,12 +61,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 		},
 	}
 
-	apiRmCmd.Flags().StringVar(&rmName, "name", "", "The name of the Observatorium API instance to remove.")
-
-	err = apiRmCmd.MarkFlagRequired("name")
-	if err != nil {
-		panic(err)
-	}
+	apiRmCmd.Flags().StringVar(&rmName, "name", "", "The name of the Observatorium API instance to remove. No need to provide if only one API is saved.")
 
 	switchCmd := &cobra.Command{
 		Use:   "switch",

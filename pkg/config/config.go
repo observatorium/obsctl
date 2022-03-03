@@ -245,6 +245,15 @@ func (c *Config) AddAPI(logger log.Logger, name APIName, apiURL string) error {
 // RemoveAPI removes a locally saved Observatorium API config as well as its tenants.
 // If the current context is pointing to the API being removed, the context is emptied.
 func (c *Config) RemoveAPI(logger log.Logger, name APIName) error {
+	if len(c.APIs) == 1 {
+		// Only one API was saved, so can assume it was current context.
+		c.APIs = map[APIName]APIConfig{}
+		c.Current.API = ""
+		c.Current.Tenant = ""
+		level.Debug(logger).Log("msg", "emptied current and removed single config")
+		return c.Save(logger)
+	}
+
 	if _, ok := c.APIs[name]; !ok {
 		return fmt.Errorf("api with name %s doesn't exist", name)
 	}
