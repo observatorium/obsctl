@@ -42,7 +42,7 @@ func TestSave(t *testing.T) {
 	t.Run("config with one API no tenant", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
+			APIs: map[string]APIConfig{
 				"stage": {URL: "https://stage.api:9090", Contexts: nil},
 			},
 		}
@@ -62,8 +62,8 @@ func TestSave(t *testing.T) {
 	t.Run("config with one API and tenant", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
@@ -84,12 +84,12 @@ func TestSave(t *testing.T) {
 	t.Run("config with multiple API and tenants", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
-				"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+				"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
@@ -134,7 +134,7 @@ func TestRead(t *testing.T) {
 	t.Run("config with one API no tenant", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
+			APIs: map[string]APIConfig{
 				"stage": {URL: "https://stage.api:9090", Contexts: nil},
 			},
 		}
@@ -150,8 +150,8 @@ func TestRead(t *testing.T) {
 	t.Run("config with one API and tenant", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
@@ -168,12 +168,12 @@ func TestRead(t *testing.T) {
 	t.Run("config with multiple API and tenants", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
-				"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+				"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
@@ -206,7 +206,7 @@ func TestAddAPI(t *testing.T) {
 
 		testutil.Ok(t, cfg.AddAPI(tlogger, "stage", "http://stage.obs.api/"))
 
-		exp := map[APIName]APIConfig{"stage": {URL: "http://stage.obs.api/", Contexts: nil}}
+		exp := map[string]APIConfig{"stage": {URL: "http://stage.obs.api/", Contexts: nil}}
 
 		testutil.Equals(t, cfg.APIs, exp)
 	})
@@ -214,14 +214,14 @@ func TestAddAPI(t *testing.T) {
 	t.Run("config with one API no tenant", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
+			APIs: map[string]APIConfig{
 				"stage": {URL: "https://stage.api:9090/", Contexts: nil},
 			},
 		}
 
 		testutil.Ok(t, cfg.AddAPI(tlogger, "prod", "https://prod.api:8080/"))
 
-		exp := map[APIName]APIConfig{
+		exp := map[string]APIConfig{
 			"stage": {URL: "https://stage.api:9090/", Contexts: nil},
 			"prod":  {URL: "https://prod.api:8080/", Contexts: nil},
 		}
@@ -232,8 +232,8 @@ func TestAddAPI(t *testing.T) {
 	t.Run("config with one API and tenant", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090/", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090/", Contexts: map[string]TenantConfig{
 					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
@@ -241,8 +241,8 @@ func TestAddAPI(t *testing.T) {
 
 		testutil.Ok(t, cfg.AddAPI(tlogger, "prod", "https://prod.api:8080/"))
 
-		exp := map[APIName]APIConfig{
-			"stage": {URL: "https://stage.api:9090/", Contexts: map[TenantName]TenantConfig{
+		exp := map[string]APIConfig{
+			"stage": {URL: "https://stage.api:9090/", Contexts: map[string]TenantConfig{
 				"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 			}},
 			"prod": {URL: "https://prod.api:8080/", Contexts: nil},
@@ -254,12 +254,12 @@ func TestAddAPI(t *testing.T) {
 	t.Run("config with multiple API and tenants", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090/", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090/", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
-				"prod": {URL: "https://prod.api:9090/", Contexts: map[TenantName]TenantConfig{
+				"prod": {URL: "https://prod.api:9090/", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
@@ -268,12 +268,12 @@ func TestAddAPI(t *testing.T) {
 
 		testutil.Ok(t, cfg.AddAPI(tlogger, "test", "https://test.api:8080"))
 
-		exp := map[APIName]APIConfig{
-			"stage": {URL: "https://stage.api:9090/", Contexts: map[TenantName]TenantConfig{
+		exp := map[string]APIConfig{
+			"stage": {URL: "https://stage.api:9090/", Contexts: map[string]TenantConfig{
 				"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 			}},
-			"prod": {URL: "https://prod.api:9090/", Contexts: map[TenantName]TenantConfig{
+			"prod": {URL: "https://prod.api:9090/", Contexts: map[string]TenantConfig{
 				"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 			}},
@@ -286,8 +286,8 @@ func TestAddAPI(t *testing.T) {
 	t.Run("api with no name", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090/", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090/", Contexts: map[string]TenantConfig{
 					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
@@ -295,8 +295,8 @@ func TestAddAPI(t *testing.T) {
 
 		testutil.Ok(t, cfg.AddAPI(tlogger, "", "https://prod.api:8080/"))
 
-		exp := map[APIName]APIConfig{
-			"stage": {URL: "https://stage.api:9090/", Contexts: map[TenantName]TenantConfig{
+		exp := map[string]APIConfig{
+			"stage": {URL: "https://stage.api:9090/", Contexts: map[string]TenantConfig{
 				"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 			}},
 			"prod.api:8080": {URL: "https://prod.api:8080/", Contexts: nil},
@@ -308,8 +308,8 @@ func TestAddAPI(t *testing.T) {
 	t.Run("api with no name and invalid url", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
@@ -324,8 +324,8 @@ func TestAddAPI(t *testing.T) {
 	t.Run("api with no trailing slash", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090/", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090/", Contexts: map[string]TenantConfig{
 					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
@@ -333,8 +333,8 @@ func TestAddAPI(t *testing.T) {
 
 		testutil.Ok(t, cfg.AddAPI(tlogger, "", "https://prod.api:8080"))
 
-		exp := map[APIName]APIConfig{
-			"stage": {URL: "https://stage.api:9090/", Contexts: map[TenantName]TenantConfig{
+		exp := map[string]APIConfig{
+			"stage": {URL: "https://stage.api:9090/", Contexts: map[string]TenantConfig{
 				"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 			}},
 			"prod.api:8080": {URL: "https://prod.api:8080/", Contexts: nil},
@@ -346,8 +346,8 @@ func TestAddAPI(t *testing.T) {
 	t.Run("api with slash in name", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090/", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090/", Contexts: map[string]TenantConfig{
 					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
@@ -383,66 +383,66 @@ func TestRemoveAPI(t *testing.T) {
 	t.Run("config with one API no tenant", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
+			APIs: map[string]APIConfig{
 				"stage": {URL: "https://stage.api:9090", Contexts: nil},
 			},
 		}
 
 		testutil.Ok(t, cfg.RemoveAPI(tlogger, "stage"))
-		testutil.Equals(t, cfg.APIs, map[APIName]APIConfig{})
+		testutil.Equals(t, cfg.APIs, map[string]APIConfig{})
 	})
 
 	t.Run("config with one API and no name given", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
+			APIs: map[string]APIConfig{
 				"stage": {URL: "https://stage.api:9090", Contexts: nil},
 			},
 		}
 
 		testutil.Ok(t, cfg.RemoveAPI(tlogger, ""))
-		testutil.Equals(t, cfg.APIs, map[APIName]APIConfig{})
+		testutil.Equals(t, cfg.APIs, map[string]APIConfig{})
 	})
 
 	t.Run("config with one API and tenant", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
 		}
 
 		testutil.Ok(t, cfg.RemoveAPI(tlogger, "stage"))
-		testutil.Equals(t, cfg.APIs, map[APIName]APIConfig{})
+		testutil.Equals(t, cfg.APIs, map[string]APIConfig{})
 	})
 
 	t.Run("config with one API and tenant but no name given", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
 		}
 
 		testutil.Ok(t, cfg.RemoveAPI(tlogger, ""))
-		testutil.Equals(t, cfg.APIs, map[APIName]APIConfig{})
+		testutil.Equals(t, cfg.APIs, map[string]APIConfig{})
 	})
 
 	t.Run("config with one current API and tenant but no name given", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
 			Current: struct {
-				API    APIName    `json:"api"`
-				Tenant TenantName `json:"tenant"`
+				API    string `json:"api"`
+				Tenant string `json:"tenant"`
 			}{
 				API:    "stage",
 				Tenant: "first",
@@ -450,18 +450,18 @@ func TestRemoveAPI(t *testing.T) {
 		}
 
 		testutil.Ok(t, cfg.RemoveAPI(tlogger, ""))
-		testutil.Equals(t, cfg.APIs, map[APIName]APIConfig{})
+		testutil.Equals(t, cfg.APIs, map[string]APIConfig{})
 	})
 
 	t.Run("config with multiple API and tenants", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
-				"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+				"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
@@ -470,8 +470,8 @@ func TestRemoveAPI(t *testing.T) {
 
 		testutil.Ok(t, cfg.RemoveAPI(tlogger, "stage"))
 
-		exp := map[APIName]APIConfig{
-			"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+		exp := map[string]APIConfig{
+			"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 				"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 			}},
@@ -483,12 +483,12 @@ func TestRemoveAPI(t *testing.T) {
 	t.Run("config with multiple API and tenants and no name given", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
-				"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+				"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
@@ -504,12 +504,12 @@ func TestRemoveAPI(t *testing.T) {
 	t.Run("config with multiple API and tenants", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
-				"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+				"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
@@ -518,8 +518,8 @@ func TestRemoveAPI(t *testing.T) {
 
 		testutil.Ok(t, cfg.RemoveAPI(tlogger, "stage"))
 
-		exp := map[APIName]APIConfig{
-			"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+		exp := map[string]APIConfig{
+			"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 				"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 			}},
@@ -531,19 +531,19 @@ func TestRemoveAPI(t *testing.T) {
 	t.Run("config with multiple API and current", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
-				"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+				"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
 			Current: struct {
-				API    APIName    `json:"api"`
-				Tenant TenantName `json:"tenant"`
+				API    string `json:"api"`
+				Tenant string `json:"tenant"`
 			}{
 				API:    "stage",
 				Tenant: "first",
@@ -552,8 +552,8 @@ func TestRemoveAPI(t *testing.T) {
 
 		testutil.Ok(t, cfg.RemoveAPI(tlogger, "stage"))
 
-		exp := map[APIName]APIConfig{
-			"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+		exp := map[string]APIConfig{
+			"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 				"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 			}},
@@ -561,8 +561,8 @@ func TestRemoveAPI(t *testing.T) {
 
 		testutil.Equals(t, cfg.APIs, exp)
 		testutil.Equals(t, cfg.Current, struct {
-			API    APIName    `json:"api"`
-			Tenant TenantName `json:"tenant"`
+			API    string `json:"api"`
+			Tenant string `json:"tenant"`
 		}{
 			API:    "",
 			Tenant: "",
@@ -584,23 +584,23 @@ func TestAddTenant(t *testing.T) {
 	t.Run("config with one API no tenant", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
+			APIs: map[string]APIConfig{
 				"stage": {URL: "https://stage.api:9090", Contexts: nil},
 			},
 		}
 
 		testutil.Ok(t, cfg.AddTenant(tlogger, "first", "stage", "first", testoidc))
 
-		exp := map[APIName]APIConfig{
-			"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+		exp := map[string]APIConfig{
+			"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 				"first": {Tenant: "first", OIDC: testoidc},
 			}},
 		}
 
 		testutil.Equals(t, cfg.APIs, exp)
 		testutil.Equals(t, cfg.Current, struct {
-			API    APIName    `json:"api"`
-			Tenant TenantName `json:"tenant"`
+			API    string `json:"api"`
+			Tenant string `json:"tenant"`
 		}{
 			API:    "stage",
 			Tenant: "first",
@@ -611,8 +611,8 @@ func TestAddTenant(t *testing.T) {
 	t.Run("config with one API and tenant", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first": {Tenant: "first", OIDC: testoidc},
 				}},
 			},
@@ -620,8 +620,8 @@ func TestAddTenant(t *testing.T) {
 
 		testutil.Ok(t, cfg.AddTenant(tlogger, "second", "stage", "second", testoidc))
 
-		exp := map[APIName]APIConfig{
-			"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+		exp := map[string]APIConfig{
+			"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 				"first":  {Tenant: "first", OIDC: testoidc},
 				"second": {Tenant: "second", OIDC: testoidc},
 			}},
@@ -629,8 +629,8 @@ func TestAddTenant(t *testing.T) {
 
 		testutil.Equals(t, cfg.APIs, exp)
 		testutil.Equals(t, cfg.Current, struct {
-			API    APIName    `json:"api"`
-			Tenant TenantName `json:"tenant"`
+			API    string `json:"api"`
+			Tenant string `json:"tenant"`
 		}{
 			API:    "stage",
 			Tenant: "second",
@@ -640,8 +640,8 @@ func TestAddTenant(t *testing.T) {
 	t.Run("tenant already exists", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
@@ -657,8 +657,8 @@ func TestAddTenant(t *testing.T) {
 	t.Run("no such api", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
@@ -674,8 +674,8 @@ func TestAddTenant(t *testing.T) {
 	t.Run("tenant name has slash", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
@@ -712,7 +712,7 @@ func TestRemoveTenant(t *testing.T) {
 	t.Run("config with one API no tenant", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
+			APIs: map[string]APIConfig{
 				"stage": {URL: "https://stage.api:9090", Contexts: nil},
 			},
 		}
@@ -726,8 +726,8 @@ func TestRemoveTenant(t *testing.T) {
 	t.Run("config with one API and tenant", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
@@ -735,18 +735,18 @@ func TestRemoveTenant(t *testing.T) {
 
 		testutil.Ok(t, cfg.RemoveTenant(tlogger, "first", "stage"))
 
-		testutil.Equals(t, cfg.APIs, map[APIName]APIConfig{"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{}}})
+		testutil.Equals(t, cfg.APIs, map[string]APIConfig{"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{}}})
 	})
 
 	t.Run("config with multiple API and tenants", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
-				"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+				"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
@@ -756,11 +756,11 @@ func TestRemoveTenant(t *testing.T) {
 		testutil.Ok(t, cfg.RemoveTenant(tlogger, "second", "stage"))
 		testutil.Ok(t, cfg.RemoveTenant(tlogger, "first", "prod"))
 
-		exp := map[APIName]APIConfig{
-			"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+		exp := map[string]APIConfig{
+			"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 				"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 			}},
-			"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+			"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 				"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 			}},
 		}
@@ -789,19 +789,19 @@ func TestGetCurrentContext(t *testing.T) {
 	t.Run("config with multiple API and current", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
-				"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+				"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
 			Current: struct {
-				API    APIName    `json:"api"`
-				Tenant TenantName `json:"tenant"`
+				API    string `json:"api"`
+				Tenant string `json:"tenant"`
 			}{
 				API:    "stage",
 				Tenant: "second",
@@ -813,7 +813,7 @@ func TestGetCurrentContext(t *testing.T) {
 
 		tenantExp := TenantConfig{Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}}
 
-		apiExp := APIConfig{URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+		apiExp := APIConfig{URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 			"first":  {Tenant: "first", CAFile: nil, OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 			"second": {Tenant: "second", CAFile: nil, OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 		}}
@@ -845,7 +845,7 @@ func TestSetCurrentContext(t *testing.T) {
 	t.Run("config with one API no tenant", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
+			APIs: map[string]APIConfig{
 				"stage": {URL: "https://stage.api:9090", Contexts: nil},
 			},
 		}
@@ -859,12 +859,12 @@ func TestSetCurrentContext(t *testing.T) {
 	t.Run("config with multiple API and no current", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
-				"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+				"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
@@ -874,8 +874,8 @@ func TestSetCurrentContext(t *testing.T) {
 		testutil.Ok(t, cfg.SetCurrentContext(tlogger, "prod", "first"))
 
 		testutil.Equals(t, cfg.Current, struct {
-			API    APIName    `json:"api"`
-			Tenant TenantName `json:"tenant"`
+			API    string `json:"api"`
+			Tenant string `json:"tenant"`
 		}{
 			API:    "prod",
 			Tenant: "first",
@@ -885,19 +885,19 @@ func TestSetCurrentContext(t *testing.T) {
 	t.Run("config with multiple API and current", func(t *testing.T) {
 		cfg := Config{
 			pathOverride: []string{filepath.Join(tmpDir, "obsctl", "test", "config.json")},
-			APIs: map[APIName]APIConfig{
-				"stage": {URL: "https://stage.api:9090", Contexts: map[TenantName]TenantConfig{
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
-				"prod": {URL: "https://prod.api:9090", Contexts: map[TenantName]TenantConfig{
+				"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
 					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
 				}},
 			},
 			Current: struct {
-				API    APIName    `json:"api"`
-				Tenant TenantName `json:"tenant"`
+				API    string `json:"api"`
+				Tenant string `json:"tenant"`
 			}{
 				API:    "stage",
 				Tenant: "second",
@@ -907,8 +907,8 @@ func TestSetCurrentContext(t *testing.T) {
 		testutil.Ok(t, cfg.SetCurrentContext(tlogger, "prod", "first"))
 
 		testutil.Equals(t, cfg.Current, struct {
-			API    APIName    `json:"api"`
-			Tenant TenantName `json:"tenant"`
+			API    string `json:"api"`
+			Tenant string `json:"tenant"`
 		}{
 			API:    "prod",
 			Tenant: "first",

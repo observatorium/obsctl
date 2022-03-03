@@ -34,7 +34,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			return conf.AddAPI(logger, config.APIName(addName), addURL)
+			return conf.AddAPI(logger, addName, addURL)
 		},
 	}
 
@@ -57,7 +57,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			return conf.RemoveAPI(logger, config.APIName(rmName))
+			return conf.RemoveAPI(logger, rmName)
 		},
 	}
 
@@ -79,7 +79,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			return conf.SetCurrentContext(logger, config.APIName(cntxt[0]), config.TenantName(cntxt[1]))
+			return conf.SetCurrentContext(logger, cntxt[0], cntxt[1])
 		},
 	}
 

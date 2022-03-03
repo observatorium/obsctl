@@ -48,24 +48,21 @@ func ensureConfigDir() error {
 	return nil
 }
 
-type APIName string
-type TenantName string
-
 // Config represents the structure of the configuration file.
 type Config struct {
 	pathOverride []string
 
-	APIs    map[APIName]APIConfig `json:"apis"`
+	APIs    map[string]APIConfig `json:"apis"`
 	Current struct {
-		API    APIName    `json:"api"`
-		Tenant TenantName `json:"tenant"`
+		API    string `json:"api"`
+		Tenant string `json:"tenant"`
 	} `json:"current"`
 }
 
 // APIConfig represents configuration for an instance of Observatorium.
 type APIConfig struct {
-	URL      string                      `json:"url"`
-	Contexts map[TenantName]TenantConfig `json:"contexts"`
+	URL      string                  `json:"url"`
+	Contexts map[string]TenantConfig `json:"contexts"`
 }
 
 // TenantConfig represents configuration for a tenant.
@@ -199,9 +196,9 @@ func (c *Config) Save(logger log.Logger) error {
 
 // AddAPI adds a new Observatorium API to the configuration and saves the config to disk.
 // In case no name is provided, the hostname of the API URL is used instead.
-func (c *Config) AddAPI(logger log.Logger, name APIName, apiURL string) error {
+func (c *Config) AddAPI(logger log.Logger, name string, apiURL string) error {
 	if c.APIs == nil {
-		c.APIs = make(map[APIName]APIConfig)
+		c.APIs = make(map[string]APIConfig)
 		level.Debug(logger).Log("msg", "initialize config API map")
 	}
 
@@ -218,7 +215,7 @@ func (c *Config) AddAPI(logger log.Logger, name APIName, apiURL string) error {
 
 	if name == "" {
 		// Host name cannot contain slashes, so need not check.
-		name = APIName(url.Host)
+		name = url.Host
 		level.Debug(logger).Log("msg", "use hostname as name")
 	} else {
 		// Need to check due to semantics of context switch.
@@ -244,10 +241,10 @@ func (c *Config) AddAPI(logger log.Logger, name APIName, apiURL string) error {
 
 // RemoveAPI removes a locally saved Observatorium API config as well as its tenants.
 // If the current context is pointing to the API being removed, the context is emptied.
-func (c *Config) RemoveAPI(logger log.Logger, name APIName) error {
+func (c *Config) RemoveAPI(logger log.Logger, name string) error {
 	if len(c.APIs) == 1 {
 		// Only one API was saved, so can assume it was current context.
-		c.APIs = map[APIName]APIConfig{}
+		c.APIs = map[string]APIConfig{}
 		c.Current.API = ""
 		c.Current.Tenant = ""
 		level.Debug(logger).Log("msg", "emptied current and removed single config")
@@ -271,14 +268,14 @@ func (c *Config) RemoveAPI(logger log.Logger, name APIName) error {
 
 // AddTenant adds configuration for a tenant under an API and saves it to disk.
 // Also, sets new tenant to current in case current config is empty.
-func (c *Config) AddTenant(logger log.Logger, name TenantName, api APIName, tenant string, oidcCfg *OIDCConfig) error {
+func (c *Config) AddTenant(logger log.Logger, name string, api string, tenant string, oidcCfg *OIDCConfig) error {
 	if _, ok := c.APIs[api]; !ok {
 		return fmt.Errorf("api with name %s doesn't exist", api)
 	}
 
 	if c.APIs[api].Contexts == nil {
 		a := c.APIs[api]
-		a.Contexts = make(map[TenantName]TenantConfig)
+		a.Contexts = make(map[string]TenantConfig)
 
 		c.APIs[api] = a
 	}
@@ -308,7 +305,7 @@ func (c *Config) AddTenant(logger log.Logger, name TenantName, api APIName, tena
 }
 
 // RemoveTenant removes configuration of a tenant under an API and saves changes to disk.
-func (c *Config) RemoveTenant(logger log.Logger, name TenantName, api APIName) error {
+func (c *Config) RemoveTenant(logger log.Logger, name string, api string) error {
 	if _, ok := c.APIs[api]; !ok {
 		return fmt.Errorf("api with name %s doesn't exist", api)
 	}
@@ -322,7 +319,7 @@ func (c *Config) RemoveTenant(logger log.Logger, name TenantName, api APIName) e
 	return c.Save(logger)
 }
 
-func (c *Config) GetContext(api APIName, tenant TenantName) (TenantConfig, APIConfig, error) {
+func (c *Config) GetContext(api string, tenant string) (TenantConfig, APIConfig, error) {
 	if _, ok := c.APIs[api]; !ok {
 		return TenantConfig{}, APIConfig{}, fmt.Errorf("api with name %s doesn't exist", c.Current.API)
 	}
@@ -344,7 +341,7 @@ func (c *Config) GetCurrentContext() (TenantConfig, APIConfig, error) {
 }
 
 // SetCurrentContext switches the current context to given api and tenant.
-func (c *Config) SetCurrentContext(logger log.Logger, api APIName, tenant TenantName) error {
+func (c *Config) SetCurrentContext(logger log.Logger, api string, tenant string) error {
 	if _, ok := c.APIs[api]; !ok {
 		return fmt.Errorf("api with name %s doesn't exist", api)
 	}

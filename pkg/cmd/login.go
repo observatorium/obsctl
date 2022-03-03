@@ -31,7 +31,7 @@ func NewLoginCmd(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			if _, ok := conf.APIs[config.APIName(api)]; !ok {
+			if _, ok := conf.APIs[api]; !ok {
 				return fmt.Errorf("api name %s does not exist, please add it in via 'context api add'", api)
 			}
 
@@ -39,7 +39,7 @@ func NewLoginCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("creating authenticated client: %w", err)
 			}
 
-			return conf.AddTenant(logger, config.TenantName(tenantCfg.Tenant), config.APIName(api), tenantCfg.Tenant, tenantCfg.OIDC)
+			return conf.AddTenant(logger, tenantCfg.Tenant, api, tenantCfg.Tenant, tenantCfg.OIDC)
 		},
 	}
 

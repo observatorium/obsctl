@@ -22,11 +22,11 @@ func NewLogoutCmd(ctx context.Context) *cobra.Command {
 			// If only one API is saved, we can assume tenant belongs to that API.
 			if len(conf.APIs) == 1 {
 				for k := range conf.APIs {
-					return conf.RemoveTenant(logger, config.TenantName(tenantName), k)
+					return conf.RemoveTenant(logger, tenantName, k)
 				}
 			}
 
-			return conf.RemoveTenant(logger, config.TenantName(tenantName), config.APIName(apiName))
+			return conf.RemoveTenant(logger, tenantName, apiName)
 		},
 	}
 
