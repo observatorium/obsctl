@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/bwplotka/mdox/pkg/clilog"
@@ -53,17 +56,28 @@ func NewObsctlCmd(ctx context.Context) *cobra.Command {
 		Long:             `CLI to interact with Observatorium`,
 		Version:          version.Version,
 		PersistentPreRun: setupLogger,
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "run called")
-		},
 	}
 
 	cmd.AddCommand(NewMetricsCmd(ctx))
 	cmd.AddCommand(NewContextCommand(ctx))
 	cmd.AddCommand(NewLoginCmd(ctx))
+	cmd.AddCommand(NewLogoutCmd(ctx))
 
 	cmd.PersistentFlags().StringVar(&logLevel, "log.level", "info", "Log filtering level.")
 	cmd.PersistentFlags().StringVar(&logFormat, "log.format", logFormatCLILog, "Log format to use.")
 
 	return cmd
+}
+
+// prettyPrintJSON prints indented JSON to stdout.
+func prettyPrintJSON(b []byte) error {
+	var out bytes.Buffer
+	err := json.Indent(&out, b, "", "\t")
+	if err != nil {
+		return fmt.Errorf("indent JSON %w", err)
+	}
+
+	fmt.Fprintln(os.Stdout, out.String())
+
+	return nil
 }

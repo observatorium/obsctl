@@ -2,27 +2,34 @@ package cmd
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
+	"os"
 
 	"github.com/go-kit/log/level"
+	"github.com/observatorium/obsctl/pkg/config"
 	"github.com/spf13/cobra"
 )
 
+// TODO(saswatamcode): Add flags for URL query params.
 func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
 		Short: "Read series, labels & rules (JSON/YAML) of a tenant.",
 		Long:  "Read series, labels & rules (JSON/YAML) of a tenant.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "get called")
-		},
 	}
 
 	seriesCmd := &cobra.Command{
 		Use:   "series",
 		Short: "Get series of a tenant.",
-		Long:  "Get series of a tenant..",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "series called")
+		Long:  "Get series of a tenant.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/series")
+			if err != nil {
+				return err
+			}
+
+			return prettyPrintJSON(b)
 		},
 	}
 
@@ -30,26 +37,47 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Use:   "labels",
 		Short: "Get labels of a tenant.",
 		Long:  "Get labels of a tenant.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "labels called")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/labels")
+			if err != nil {
+				return err
+			}
+
+			return prettyPrintJSON(b)
 		},
 	}
 
+	var labelName string
 	labelValuesCmd := &cobra.Command{
 		Use:   "labelvalues",
 		Short: "Get label values of a tenant.",
 		Long:  "Get label values of a tenant.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "label values called")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/label/"+labelName+"/values")
+			if err != nil {
+				return err
+			}
+
+			return prettyPrintJSON(b)
 		},
+	}
+	labelValuesCmd.Flags().StringVar(&labelName, "name", "", "Name of the label to fetch values for.")
+	err := labelValuesCmd.MarkFlagRequired("name")
+	if err != nil {
+		panic(err)
 	}
 
 	rulesCmd := &cobra.Command{
 		Use:   "rules",
 		Short: "Get rules of a tenant.",
 		Long:  "Get rules of a tenant.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "rules called")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules")
+			if err != nil {
+				return err
+			}
+
+			return prettyPrintJSON(b)
 		},
 	}
 
@@ -57,8 +85,14 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Use:   "rules.raw",
 		Short: "Get configured rules of a tenant.",
 		Long:  "Get configured rules of a tenant.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "rules.raw called")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules/raw")
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprintln(os.Stdout, string(b))
+			return nil
 		},
 	}
 
@@ -72,16 +106,36 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 }
 
 func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
+	var ruleFilePath string
 	cmd := &cobra.Command{
 		Use:   "set",
 		Short: "Write Prometheus Rules configuration for a tenant.",
 		Long:  "Write Prometheus Rules configuration for a tenant.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "set called")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			file, err := os.Open(ruleFilePath)
+			if err != nil {
+				return fmt.Errorf("opening rule file: %w", err)
+			}
+			defer file.Close()
+
+			data, err := ioutil.ReadAll(file)
+			if err != nil {
+				return fmt.Errorf("reading rule file: %w", err)
+			}
+
+			fmt.Fprintln(os.Stdout, string(data))
+
+			b, err := config.DoMetricsPutReqWithYAML(ctx, logger, "/api/v1/rules/raw", data)
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprintln(os.Stdout, string(b))
+			return nil
 		},
 	}
 
-	cmd.Flags().String("rule.file", "", "Path to Rules configuration file, which will be set for a tenant.")
+	cmd.Flags().StringVar(&ruleFilePath, "rule.file", "", "Path to Rules configuration file, which will be set for a tenant.")
 
 	return cmd
 }
@@ -94,7 +148,7 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 		Example: `obsctl query "prometheus_http_request_total"`,
 		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "query called")
+			level.Info(logger).Log("msg", "query not implemented yet")
 		},
 	}
 
@@ -106,9 +160,6 @@ func NewMetricsCmd(ctx context.Context) *cobra.Command {
 		Use:   "metrics",
 		Short: "Metrics based operations for Observatorium.",
 		Long:  "Metrics based operations for Observatorium.",
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "metrics called")
-		},
 	}
 
 	cmd.AddCommand(NewMetricsGetCmd(ctx))
