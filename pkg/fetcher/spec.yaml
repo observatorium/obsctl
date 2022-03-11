@@ -296,9 +296,9 @@ paths:
         schema:
           type: string
       - in: query
-        name: match[]
+        name: match[] # While matchers are required, in case of Observatorium, due to enforcing
+        # of tenant matchers, that requirement is fulfilled, so match[] is optional here.
         description: Repeated series selector argument
-        required: true
         schema:
           type: array
           items:
@@ -481,8 +481,7 @@ components:
         - rules
       properties:
         interval:
-          type: string
-          example: "1m"
+          type: number
         name:
           type: string
           example: "telemeter.rules"
@@ -499,8 +498,7 @@ components:
         - rules
       properties:
         interval:
-          type: string
-          example: "1m"
+          type: number
         name:
           type: string
           example: "telemeter.rules"

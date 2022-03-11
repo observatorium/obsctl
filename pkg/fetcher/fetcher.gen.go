@@ -219,7 +219,7 @@ type RecordingRuleEvaluatedType string
 
 // RuleGroup defines model for RuleGroup.
 type RuleGroup struct {
-	Interval *string       `json:"interval,omitempty"`
+	Interval *float32      `json:"interval,omitempty"`
 	Name     string        `json:"name"`
 	Rules    []interface{} `json:"rules"`
 }
@@ -228,7 +228,7 @@ type RuleGroup struct {
 type RuleGroupEvaluated struct {
 	EvaluationTime          *float32      `json:"evaluationTime,omitempty"`
 	File                    *string       `json:"file,omitempty"`
-	Interval                *string       `json:"interval,omitempty"`
+	Interval                *float32      `json:"interval,omitempty"`
 	LastEvaluation          *string       `json:"lastEvaluation,omitempty"`
 	Limit                   *float32      `json:"limit,omitempty"`
 	Name                    string        `json:"name"`
@@ -335,7 +335,7 @@ type GetRulesParams struct {
 // GetSeriesParams defines parameters for GetSeries.
 type GetSeriesParams struct {
 	// Repeated series selector argument
-	Match []string `json:"match[]"`
+	Match *[]string `json:"match[],omitempty"`
 
 	// Start timestamp
 	Start *string `json:"start,omitempty"`
@@ -1619,16 +1619,20 @@ func NewGetSeriesRequest(server string, tenant string, params *GetSeriesParams) 
 
 	queryValues := queryURL.Query()
 
-	if queryFrag, err := runtime.StyleParamWithLocation("form", true, "match[]", runtime.ParamLocationQuery, params.Match); err != nil {
-		return nil, err
-	} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-		return nil, err
-	} else {
-		for k, v := range parsed {
-			for _, v2 := range v {
-				queryValues.Add(k, v2)
+	if params.Match != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "match[]", runtime.ParamLocationQuery, *params.Match); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
 			}
 		}
+
 	}
 
 	if params.Start != nil {
@@ -2623,15 +2627,12 @@ func (siw *ServerInterfaceWrapper) GetSeries(w http.ResponseWriter, r *http.Requ
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetSeriesParams
 
-	// ------------- Required query parameter "match[]" -------------
+	// ------------- Optional query parameter "match[]" -------------
 	if paramValue := r.URL.Query().Get("match[]"); paramValue != "" {
 
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "match[]"})
-		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "match[]", r.URL.Query(), &params.Match)
+	err = runtime.BindQueryParameter("form", true, false, "match[]", r.URL.Query(), &params.Match)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "match[]", Err: err})
 		return

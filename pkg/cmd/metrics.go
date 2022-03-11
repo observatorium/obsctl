@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net/url"
 	"os"
 
 	"github.com/go-kit/log/level"
 	"github.com/observatorium/obsctl/pkg/config"
+	"github.com/observatorium/obsctl/pkg/fetcher"
 	"github.com/spf13/cobra"
 )
 
@@ -26,29 +26,19 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get series of a tenant.",
 		Long:  "Get series of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			u := "/api/v1/series"
-			params := url.Values{}
-
-			for _, s := range seriesMatchers {
-				params.Add("match[]", s)
-			}
-
-			if len(params.Encode()) != 0 {
-				u = u + "?" + params.Encode()
-			}
-
-			b, err := config.DoMetricsGetReq(ctx, logger, u)
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
-				if len(b) != 0 {
-					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("%v error pretty printing: %v", perr, err)
-					}
-					return err
-				}
-				return err
+				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			return prettyPrintJSON(b, cmd.OutOrStdout())
+			params := &fetcher.GetSeriesParams{Match: nil, Start: nil, End: nil}
+
+			resp, err := f.GetSeriesWithResponse(ctx, currentTenant, params)
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			return prettyPrintJSON(resp.Body)
 		},
 	}
 	seriesCmd.Flags().StringArrayVarP(&seriesMatchers, "match", "m", nil, "Repeated series selector argument that selects the series to return.")
@@ -62,18 +52,19 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get labels of a tenant.",
 		Long:  "Get labels of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/labels")
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
-				if len(b) != 0 {
-					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("%v error pretty printing: %v", perr, err)
-					}
-					return err
-				}
-				return err
+				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			return prettyPrintJSON(b, cmd.OutOrStdout())
+			params := &fetcher.GetLabelsParams{Match: nil, Start: nil, End: nil}
+
+			resp, err := f.GetLabelsWithResponse(ctx, currentTenant, params)
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			return prettyPrintJSON(resp.Body)
 		},
 	}
 
@@ -83,18 +74,19 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get label values of a tenant.",
 		Long:  "Get label values of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/label/"+labelName+"/values")
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
-				if len(b) != 0 {
-					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("%v error pretty printing: %v", perr, err)
-					}
-					return err
-				}
-				return err
+				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			return prettyPrintJSON(b, cmd.OutOrStdout())
+			params := &fetcher.GetLabelValuesParams{Match: nil, Start: nil, End: nil}
+
+			resp, err := f.GetLabelValuesWithResponse(ctx, currentTenant, labelName, params)
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			return prettyPrintJSON(resp.Body)
 		},
 	}
 	labelValuesCmd.Flags().StringVar(&labelName, "name", "", "Name of the label to fetch values for.")
@@ -108,18 +100,19 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get rules of a tenant.",
 		Long:  "Get rules of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules")
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
-				if len(b) != 0 {
-					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("%v error pretty printing: %v", perr, err)
-					}
-					return err
-				}
-				return err
+				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			return prettyPrintJSON(b, cmd.OutOrStdout())
+			params := &fetcher.GetRulesParams{Match: nil, Type: nil}
+
+			resp, err := f.GetRulesWithResponse(ctx, currentTenant, params)
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			return prettyPrintJSON(resp.Body)
 		},
 	}
 
@@ -128,16 +121,17 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get configured rules of a tenant.",
 		Long:  "Get configured rules of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules/raw")
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
-				if len(b) != 0 {
-					fmt.Fprintln(cmd.OutOrStdout(), string(b))
-					return err
-				}
-				return err
+				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), string(b))
+			resp, err := f.GetRawRulesWithResponse(ctx, currentTenant)
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			fmt.Fprintln(os.Stdout, string(resp.Body))
 			return nil
 		},
 	}

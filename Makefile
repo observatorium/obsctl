@@ -111,5 +111,5 @@ test-e2e:
 	@go test -v -timeout 99m github.com/observatorium/obsctl/test/e2e
 	@kill -9 `pidof hydra`
 	
-pkg/fetcher/fetcher.go: $(OAPI_CODEGEN) pkg/fetcher/spec.yaml
+pkg/fetcher/fetcher.gen.go: $(OAPI_CODEGEN) pkg/fetcher/spec.yaml
 	$(OAPI_CODEGEN) -generate types,client,chi-server -package fetcher pkg/fetcher/spec.yaml | sed 's|gopkg.in/yaml.v2|github.com/ghodss/yaml|g' | gofmt -s > $@
