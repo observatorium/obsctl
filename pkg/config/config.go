@@ -185,7 +185,9 @@ func (c *Config) Save(logger log.Logger) error {
 	}
 	defer file.Close()
 
-	if err := json.NewEncoder(file).Encode(c); err != nil {
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(c); err != nil {
 		return fmt.Errorf("writing config: %w", err)
 	}
 
