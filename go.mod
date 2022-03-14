@@ -8,7 +8,7 @@ require (
 	github.com/efficientgo/tools/core v0.0.0-20210609125236-d73259166f20
 	github.com/go-kit/log v0.2.0
 	github.com/oklog/run v1.1.0
-	github.com/spf13/cobra v0.0.5
+	github.com/spf13/cobra v1.4.0
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 )
 
