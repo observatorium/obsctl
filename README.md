@@ -9,6 +9,7 @@ Usage:
   obsctl [command]
 
 Available Commands:
+  completion  Generate the autocompletion script for the specified shell
   context     Manage context configuration.
   help        Help about any command
   login       Login as a tenant. Will also save tenant details locally.
@@ -19,7 +20,7 @@ Flags:
   -h, --help                help for obsctl
       --log.format string   Log format to use. (default "clilog")
       --log.level string    Log filtering level. (default "info")
-      --version             version for obsctl
+  -v, --version             version for obsctl
 
 Use "obsctl [command] --help" for more information about a command.
 ```
