@@ -18,7 +18,9 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Long:  "Read series, labels & rules (JSON/YAML) of a tenant.",
 	}
 
+	// Series command.
 	var seriesMatchers []string
+	var seriesStart, seriesEnd string
 	seriesCmd := &cobra.Command{
 		Use:   "series",
 		Short: "Get series of a tenant.",
@@ -29,7 +31,16 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			params := &fetcher.GetSeriesParams{Match: nil, Start: nil, End: nil}
+			params := &fetcher.GetSeriesParams{}
+			if len(seriesMatchers) > 0 {
+				params.Match = &seriesMatchers
+			}
+			if seriesStart != "" {
+				params.Start = &seriesStart
+			}
+			if seriesEnd != "" {
+				params.End = &seriesEnd
+			}
 
 			resp, err := f.GetSeriesWithResponse(ctx, currentTenant, params)
 			if err != nil {
@@ -40,11 +51,12 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		},
 	}
 	seriesCmd.Flags().StringArrayVarP(&seriesMatchers, "match", "m", nil, "Repeated series selector argument that selects the series to return.")
-	err := seriesCmd.MarkFlagRequired("match")
-	if err != nil {
-		panic(err)
-	}
+	seriesCmd.Flags().StringVarP(&seriesStart, "start", "s", "", "Start timestamp.")
+	seriesCmd.Flags().StringVarP(&seriesEnd, "end", "e", "", "End timestamp.")
 
+	// Labels command.
+	var labelMatchers []string
+	var labelStart, labelEnd string
 	labelsCmd := &cobra.Command{
 		Use:   "labels",
 		Short: "Get labels of a tenant.",
@@ -55,7 +67,16 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			params := &fetcher.GetLabelsParams{Match: nil, Start: nil, End: nil}
+			params := &fetcher.GetLabelsParams{}
+			if len(labelMatchers) > 0 {
+				params.Match = &labelMatchers
+			}
+			if labelStart != "" {
+				params.Start = &labelStart
+			}
+			if labelEnd != "" {
+				params.End = &labelEnd
+			}
 
 			resp, err := f.GetLabelsWithResponse(ctx, currentTenant, params)
 			if err != nil {
@@ -65,8 +86,13 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 			return prettyPrintJSON(resp.Body)
 		},
 	}
+	labelsCmd.Flags().StringArrayVarP(&labelMatchers, "match", "m", []string{}, "Repeated series selector argument that selects the series from which to read the label names.")
+	labelsCmd.Flags().StringVarP(&labelStart, "start", "s", "", "Start timestamp.")
+	labelsCmd.Flags().StringVarP(&labelEnd, "end", "e", "", "End timestamp.")
 
-	var labelName string
+	// Labelvalues command.
+	var labelValuesMatchers []string
+	var labelName, labelValuesStart, labelValuesEnd string
 	labelValuesCmd := &cobra.Command{
 		Use:   "labelvalues",
 		Short: "Get label values of a tenant.",
@@ -77,7 +103,16 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			params := &fetcher.GetLabelValuesParams{Match: nil, Start: nil, End: nil}
+			params := &fetcher.GetLabelValuesParams{}
+			if len(labelValuesMatchers) > 0 {
+				params.Match = &labelValuesMatchers
+			}
+			if labelValuesStart != "" {
+				params.Start = &labelValuesStart
+			}
+			if labelValuesEnd != "" {
+				params.End = &labelValuesEnd
+			}
 
 			resp, err := f.GetLabelValuesWithResponse(ctx, currentTenant, labelName, params)
 			if err != nil {
@@ -88,11 +123,18 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		},
 	}
 	labelValuesCmd.Flags().StringVar(&labelName, "name", "", "Name of the label to fetch values for.")
-	err = labelValuesCmd.MarkFlagRequired("name")
+	labelValuesCmd.Flags().StringArrayVarP(&labelValuesMatchers, "match", "m", []string{}, "Repeated series selector argument that selects the series from which to read the label values.")
+	labelValuesCmd.Flags().StringVarP(&labelValuesStart, "start", "s", "", "Start timestamp.")
+	labelValuesCmd.Flags().StringVarP(&labelValuesEnd, "end", "e", "", "End timestamp.")
+
+	err := labelValuesCmd.MarkFlagRequired("name")
 	if err != nil {
 		panic(err)
 	}
 
+	// Rules command.
+	var ruleMatchers []string
+	var ruleType string
 	rulesCmd := &cobra.Command{
 		Use:   "rules",
 		Short: "Get rules of a tenant.",
@@ -103,7 +145,16 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			params := &fetcher.GetRulesParams{Match: nil, Type: nil}
+			params := &fetcher.GetRulesParams{}
+			if len(ruleMatchers) > 0 {
+				params.Match = &ruleMatchers
+			}
+			if ruleType != "" {
+				if ruleType != "alert" && ruleType != "record" {
+					return fmt.Errorf("not valid rule type")
+				}
+				params.Type = &ruleType
+			}
 
 			resp, err := f.GetRulesWithResponse(ctx, currentTenant, params)
 			if err != nil {
@@ -113,7 +164,10 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 			return prettyPrintJSON(resp.Body)
 		},
 	}
+	rulesCmd.Flags().StringArrayVarP(&ruleMatchers, "match", "m", []string{}, "Repeated series selector argument that selects the series from which to read the label values.")
+	rulesCmd.Flags().StringVarP(&ruleType, "type", "t", "", "Rule type to filter by i.e, alert or record. No filtering done if skipped.")
 
+	// Rules raw command.
 	rulesRawCmd := &cobra.Command{
 		Use:   "rules.raw",
 		Short: "Get configured rules of a tenant.",
