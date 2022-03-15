@@ -9,7 +9,7 @@ import (
 )
 
 // NewCustomFetcher returns a ClientWithResponses which is configured to use oauth HTTP Client.
-func NewCustomFetcher(ctx context.Context, logger log.Logger) (*ClientWithResponses, string, error) {
+func NewCustomFetcher(ctx context.Context, logger log.Logger) (*ClientWithResponses, Tenant, error) {
 	cfg, err := config.Read(logger)
 	if err != nil {
 		return nil, "", fmt.Errorf("getting reading config: %w", err)
@@ -28,5 +28,5 @@ func NewCustomFetcher(ctx context.Context, logger log.Logger) (*ClientWithRespon
 		return nil, "", fmt.Errorf("getting fetcher client: %w", err)
 	}
 
-	return fc, cfg.Current.Tenant, nil
+	return fc, Tenant(cfg.Current.Tenant), nil
 }

@@ -12,12 +12,7 @@ tags:
 paths:
   /api/metrics/v1/{tenant}/api/v1/rules/raw:
     parameters:
-      - in: path
-        name: tenant
-        description: name of the tenant
-        required: true
-        schema:
-          type: string
+      - $ref: "#/components/parameters/tenant"
     get:
       tags:
         - rulesrawv1
@@ -57,12 +52,7 @@ paths:
         description: Rules to set for a tenant
   /api/metrics/v1/{tenant}/api/v1/rules:
     parameters:
-      - in: path
-        name: tenant
-        description: name of the tenant
-        required: true
-        schema:
-          type: string
+      - $ref: "#/components/parameters/tenant"
       - in: query
         name: type
         description: type of Rules
@@ -98,31 +88,10 @@ paths:
           description: Server side error
   /api/metrics/v1/{tenant}/api/v1/labels:
     parameters:
-      - in: path
-        name: tenant
-        description: name of the tenant
-        required: true
-        schema:
-          type: string
-      - in: query
-        name: match[]
-        description: Repeated series selector argument
-        schema:
-          type: array
-          items:
-            type: string
-      - in: query
-        name: start
-        description: Start timestamp
-        schema:
-          type: string
-          format: rfc3339 | unix_timestamp
-      - in: query
-        name: end
-        description: End timestamp
-        schema:
-          type: string
-          format: rfc3339 | unix_timestamp
+      - $ref: "#/components/parameters/tenant"
+      - $ref: "#/components/parameters/seriesMatcher"
+      - $ref: "#/components/parameters/startTS"
+      - $ref: "#/components/parameters/endTS"
     get:
       tags:
         - labelsv1
@@ -143,37 +112,16 @@ paths:
           description: Server side error
   /api/metrics/v1/{tenant}/api/v1/label/{label_name}/values:
     parameters:
-      - in: path
-        name: tenant
-        description: name of the tenant
-        required: true
-        schema:
-          type: string
+      - $ref: "#/components/parameters/tenant"
       - in: path
         name: label_name
         description: label name to get values for
         required: true
         schema:
           type: string
-      - in: query
-        name: match[]
-        description: Repeated series selector argument
-        schema:
-          type: array
-          items:
-            type: string
-      - in: query
-        name: start
-        description: Start timestamp
-        schema:
-          type: string
-          format: rfc3339 | unix_timestamp
-      - in: query
-        name: end
-        description: End timestamp
-        schema:
-          type: string
-          format: rfc3339 | unix_timestamp
+      - $ref: "#/components/parameters/seriesMatcher"
+      - $ref: "#/components/parameters/startTS"
+      - $ref: "#/components/parameters/endTS"
     get:
       tags:
         - labelvaluesv1
@@ -194,28 +142,15 @@ paths:
           description: Server side error
   /api/metrics/v1/{tenant}/api/v1/query:
     parameters:
-      - in: path
-        name: tenant
-        description: name of the tenant
-        required: true
-        schema:
-          type: string
-      - in: query
-        name: query
-        description: query to fetch result for
-        schema:
-          type: string
+      - $ref: "#/components/parameters/tenant"
+      - $ref: "#/components/parameters/query"
+      - $ref: "#/components/parameters/queryTimeout"
       - in: query
         name: time
         description: Evaluation timestamp
         schema:
           type: string
           format: rfc3339 | unix_timestamp
-      - in: query
-        name: timeout
-        description: Evaluation timeout
-        schema:
-          type: string
     get:
       tags:
         - queryv1
@@ -236,37 +171,14 @@ paths:
           description: Server side error
   /api/metrics/v1/{tenant}/api/v1/query_range:
     parameters:
-      - in: path
-        name: tenant
-        description: name of the tenant
-        required: true
-        schema:
-          type: string
-      - in: query
-        name: query
-        description: query to fetch result for
-        schema:
-          type: string
-      - in: query
-        name: start
-        description: Start timestamp
-        schema:
-          type: string
-          format: rfc3339 | unix_timestamp
-      - in: query
-        name: end
-        description: End timestamp
-        schema:
-          type: string
-          format: rfc3339 | unix_timestamp
+      - $ref: "#/components/parameters/tenant"
+      - $ref: "#/components/parameters/query"
+      - $ref: "#/components/parameters/startTS"
+      - $ref: "#/components/parameters/endTS"
+      - $ref: "#/components/parameters/queryTimeout"
       - in: query
         name: step
         description: Query resolution step width
-        schema:
-          type: string
-      - in: query
-        name: timeout
-        description: Evaluation timeout
         schema:
           type: string
     get:
@@ -289,32 +201,12 @@ paths:
           description: Server side error
   /api/metrics/v1/{tenant}/api/v1/series:
     parameters:
-      - in: path
-        name: tenant
-        description: name of the tenant
-        required: true
-        schema:
-          type: string
-      - in: query
-        name: match[] # While matchers are required, in case of Observatorium, due to enforcing
-        # of tenant matchers, that requirement is fulfilled, so match[] is optional here.
-        description: Repeated series selector argument
-        schema:
-          type: array
-          items:
-            type: string
-      - in: query
-        name: start
-        description: Start timestamp
-        schema:
-          type: string
-          format: rfc3339 | unix_timestamp
-      - in: query
-        name: end
-        description: End timestamp
-        schema:
-          type: string
-          format: rfc3339 | unix_timestamp
+      - $ref: "#/components/parameters/tenant"
+      - $ref: "#/components/parameters/seriesMatcher"
+      # While matchers are required, in case of Observatorium, due to enforcing
+      # of tenant matchers, that requirement is fulfilled, so match[] is optional here.
+      - $ref: "#/components/parameters/startTS"
+      - $ref: "#/components/parameters/endTS"
     get:
       tags:
         - seriesv1
@@ -334,6 +226,48 @@ paths:
         "5XX":
           description: Server side error
 components:
+  parameters:
+    tenant:
+      in: path
+      name: tenant
+      description: name of the tenant
+      required: true
+      schema:
+        type: string
+    seriesMatcher:
+      in: query
+      name: match[]
+      description: Repeated series selector argument
+      schema:
+        type: array
+        items:
+          type: string
+    startTS:
+      in: query
+      name: start
+      description: Start timestamp
+      schema:
+        type: string
+        format: rfc3339 | unix_timestamp
+    endTS:
+      in: query
+      name: end
+      description: End timestamp
+      schema:
+        type: string
+        format: rfc3339 | unix_timestamp
+    query:
+      in: query
+      name: query
+      description: query to fetch result for
+      schema:
+        type: string
+    queryTimeout:
+      in: query
+      name: timeout
+      description: Evaluation timeout
+      schema:
+        type: string
   schemas:
     SeriesResponse:
       type: object

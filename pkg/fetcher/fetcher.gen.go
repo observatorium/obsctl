@@ -269,58 +269,76 @@ type SeriesResponse struct {
 	Warnings  *[]string `json:"warnings,omitempty"`
 }
 
+// EndTS defines model for endTS.
+type EndTS string
+
+// Query defines model for query.
+type Query string
+
+// QueryTimeout defines model for queryTimeout.
+type QueryTimeout string
+
+// SeriesMatcher defines model for seriesMatcher.
+type SeriesMatcher []string
+
+// StartTS defines model for startTS.
+type StartTS string
+
+// Tenant defines model for tenant.
+type Tenant string
+
 // GetLabelValuesParams defines parameters for GetLabelValues.
 type GetLabelValuesParams struct {
 	// Repeated series selector argument
-	Match *[]string `json:"match[],omitempty"`
+	Match *SeriesMatcher `json:"match[],omitempty"`
 
 	// Start timestamp
-	Start *string `json:"start,omitempty"`
+	Start *StartTS `json:"start,omitempty"`
 
 	// End timestamp
-	End *string `json:"end,omitempty"`
+	End *EndTS `json:"end,omitempty"`
 }
 
 // GetLabelsParams defines parameters for GetLabels.
 type GetLabelsParams struct {
 	// Repeated series selector argument
-	Match *[]string `json:"match[],omitempty"`
+	Match *SeriesMatcher `json:"match[],omitempty"`
 
 	// Start timestamp
-	Start *string `json:"start,omitempty"`
+	Start *StartTS `json:"start,omitempty"`
 
 	// End timestamp
-	End *string `json:"end,omitempty"`
+	End *EndTS `json:"end,omitempty"`
 }
 
 // GetInstantQueryParams defines parameters for GetInstantQuery.
 type GetInstantQueryParams struct {
 	// query to fetch result for
-	Query *string `json:"query,omitempty"`
+	Query *Query `json:"query,omitempty"`
+
+	// Evaluation timeout
+	Timeout *QueryTimeout `json:"timeout,omitempty"`
 
 	// Evaluation timestamp
 	Time *string `json:"time,omitempty"`
-
-	// Evaluation timeout
-	Timeout *string `json:"timeout,omitempty"`
 }
 
 // GetRangeQueryParams defines parameters for GetRangeQuery.
 type GetRangeQueryParams struct {
 	// query to fetch result for
-	Query *string `json:"query,omitempty"`
+	Query *Query `json:"query,omitempty"`
 
 	// Start timestamp
-	Start *string `json:"start,omitempty"`
+	Start *StartTS `json:"start,omitempty"`
 
 	// End timestamp
-	End *string `json:"end,omitempty"`
+	End *EndTS `json:"end,omitempty"`
+
+	// Evaluation timeout
+	Timeout *QueryTimeout `json:"timeout,omitempty"`
 
 	// Query resolution step width
 	Step *string `json:"step,omitempty"`
-
-	// Evaluation timeout
-	Timeout *string `json:"timeout,omitempty"`
 }
 
 // GetRulesParams defines parameters for GetRules.
@@ -335,13 +353,13 @@ type GetRulesParams struct {
 // GetSeriesParams defines parameters for GetSeries.
 type GetSeriesParams struct {
 	// Repeated series selector argument
-	Match *[]string `json:"match[],omitempty"`
+	Match *SeriesMatcher `json:"match[],omitempty"`
 
 	// Start timestamp
-	Start *string `json:"start,omitempty"`
+	Start *StartTS `json:"start,omitempty"`
 
 	// End timestamp
-	End *string `json:"end,omitempty"`
+	End *EndTS `json:"end,omitempty"`
 }
 
 // Getter for additional properties for ActiveAlert_Annotations. Returns the specified
@@ -948,31 +966,31 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 // The interface specification for the client above.
 type ClientInterface interface {
 	// GetLabelValues request
-	GetLabelValues(ctx context.Context, tenant string, labelName string, params *GetLabelValuesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetLabelValues(ctx context.Context, tenant Tenant, labelName string, params *GetLabelValuesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetLabels request
-	GetLabels(ctx context.Context, tenant string, params *GetLabelsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetLabels(ctx context.Context, tenant Tenant, params *GetLabelsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetInstantQuery request
-	GetInstantQuery(ctx context.Context, tenant string, params *GetInstantQueryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetInstantQuery(ctx context.Context, tenant Tenant, params *GetInstantQueryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRangeQuery request
-	GetRangeQuery(ctx context.Context, tenant string, params *GetRangeQueryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetRangeQuery(ctx context.Context, tenant Tenant, params *GetRangeQueryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRules request
-	GetRules(ctx context.Context, tenant string, params *GetRulesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetRules(ctx context.Context, tenant Tenant, params *GetRulesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRawRules request
-	GetRawRules(ctx context.Context, tenant string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetRawRules(ctx context.Context, tenant Tenant, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SetRawRules request with any body
-	SetRawRulesWithBody(ctx context.Context, tenant string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SetRawRulesWithBody(ctx context.Context, tenant Tenant, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetSeries request
-	GetSeries(ctx context.Context, tenant string, params *GetSeriesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetSeries(ctx context.Context, tenant Tenant, params *GetSeriesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) GetLabelValues(ctx context.Context, tenant string, labelName string, params *GetLabelValuesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetLabelValues(ctx context.Context, tenant Tenant, labelName string, params *GetLabelValuesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetLabelValuesRequest(c.Server, tenant, labelName, params)
 	if err != nil {
 		return nil, err
@@ -984,7 +1002,7 @@ func (c *Client) GetLabelValues(ctx context.Context, tenant string, labelName st
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetLabels(ctx context.Context, tenant string, params *GetLabelsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetLabels(ctx context.Context, tenant Tenant, params *GetLabelsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetLabelsRequest(c.Server, tenant, params)
 	if err != nil {
 		return nil, err
@@ -996,7 +1014,7 @@ func (c *Client) GetLabels(ctx context.Context, tenant string, params *GetLabels
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetInstantQuery(ctx context.Context, tenant string, params *GetInstantQueryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetInstantQuery(ctx context.Context, tenant Tenant, params *GetInstantQueryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetInstantQueryRequest(c.Server, tenant, params)
 	if err != nil {
 		return nil, err
@@ -1008,7 +1026,7 @@ func (c *Client) GetInstantQuery(ctx context.Context, tenant string, params *Get
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetRangeQuery(ctx context.Context, tenant string, params *GetRangeQueryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetRangeQuery(ctx context.Context, tenant Tenant, params *GetRangeQueryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetRangeQueryRequest(c.Server, tenant, params)
 	if err != nil {
 		return nil, err
@@ -1020,7 +1038,7 @@ func (c *Client) GetRangeQuery(ctx context.Context, tenant string, params *GetRa
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetRules(ctx context.Context, tenant string, params *GetRulesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetRules(ctx context.Context, tenant Tenant, params *GetRulesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetRulesRequest(c.Server, tenant, params)
 	if err != nil {
 		return nil, err
@@ -1032,7 +1050,7 @@ func (c *Client) GetRules(ctx context.Context, tenant string, params *GetRulesPa
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetRawRules(ctx context.Context, tenant string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetRawRules(ctx context.Context, tenant Tenant, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetRawRulesRequest(c.Server, tenant)
 	if err != nil {
 		return nil, err
@@ -1044,7 +1062,7 @@ func (c *Client) GetRawRules(ctx context.Context, tenant string, reqEditors ...R
 	return c.Client.Do(req)
 }
 
-func (c *Client) SetRawRulesWithBody(ctx context.Context, tenant string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) SetRawRulesWithBody(ctx context.Context, tenant Tenant, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetRawRulesRequestWithBody(c.Server, tenant, contentType, body)
 	if err != nil {
 		return nil, err
@@ -1056,7 +1074,7 @@ func (c *Client) SetRawRulesWithBody(ctx context.Context, tenant string, content
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSeries(ctx context.Context, tenant string, params *GetSeriesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetSeries(ctx context.Context, tenant Tenant, params *GetSeriesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSeriesRequest(c.Server, tenant, params)
 	if err != nil {
 		return nil, err
@@ -1069,7 +1087,7 @@ func (c *Client) GetSeries(ctx context.Context, tenant string, params *GetSeries
 }
 
 // NewGetLabelValuesRequest generates requests for GetLabelValues
-func NewGetLabelValuesRequest(server string, tenant string, labelName string, params *GetLabelValuesParams) (*http.Request, error) {
+func NewGetLabelValuesRequest(server string, tenant Tenant, labelName string, params *GetLabelValuesParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1162,7 +1180,7 @@ func NewGetLabelValuesRequest(server string, tenant string, labelName string, pa
 }
 
 // NewGetLabelsRequest generates requests for GetLabels
-func NewGetLabelsRequest(server string, tenant string, params *GetLabelsParams) (*http.Request, error) {
+func NewGetLabelsRequest(server string, tenant Tenant, params *GetLabelsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1248,7 +1266,7 @@ func NewGetLabelsRequest(server string, tenant string, params *GetLabelsParams) 
 }
 
 // NewGetInstantQueryRequest generates requests for GetInstantQuery
-func NewGetInstantQueryRequest(server string, tenant string, params *GetInstantQueryParams) (*http.Request, error) {
+func NewGetInstantQueryRequest(server string, tenant Tenant, params *GetInstantQueryParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1291,9 +1309,9 @@ func NewGetInstantQueryRequest(server string, tenant string, params *GetInstantQ
 
 	}
 
-	if params.Time != nil {
+	if params.Timeout != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "time", runtime.ParamLocationQuery, *params.Time); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "timeout", runtime.ParamLocationQuery, *params.Timeout); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -1307,9 +1325,9 @@ func NewGetInstantQueryRequest(server string, tenant string, params *GetInstantQ
 
 	}
 
-	if params.Timeout != nil {
+	if params.Time != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "timeout", runtime.ParamLocationQuery, *params.Timeout); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "time", runtime.ParamLocationQuery, *params.Time); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -1334,7 +1352,7 @@ func NewGetInstantQueryRequest(server string, tenant string, params *GetInstantQ
 }
 
 // NewGetRangeQueryRequest generates requests for GetRangeQuery
-func NewGetRangeQueryRequest(server string, tenant string, params *GetRangeQueryParams) (*http.Request, error) {
+func NewGetRangeQueryRequest(server string, tenant Tenant, params *GetRangeQueryParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1409,9 +1427,9 @@ func NewGetRangeQueryRequest(server string, tenant string, params *GetRangeQuery
 
 	}
 
-	if params.Step != nil {
+	if params.Timeout != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "step", runtime.ParamLocationQuery, *params.Step); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "timeout", runtime.ParamLocationQuery, *params.Timeout); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -1425,9 +1443,9 @@ func NewGetRangeQueryRequest(server string, tenant string, params *GetRangeQuery
 
 	}
 
-	if params.Timeout != nil {
+	if params.Step != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "timeout", runtime.ParamLocationQuery, *params.Timeout); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "step", runtime.ParamLocationQuery, *params.Step); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -1452,7 +1470,7 @@ func NewGetRangeQueryRequest(server string, tenant string, params *GetRangeQuery
 }
 
 // NewGetRulesRequest generates requests for GetRules
-func NewGetRulesRequest(server string, tenant string, params *GetRulesParams) (*http.Request, error) {
+func NewGetRulesRequest(server string, tenant Tenant, params *GetRulesParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1522,7 +1540,7 @@ func NewGetRulesRequest(server string, tenant string, params *GetRulesParams) (*
 }
 
 // NewGetRawRulesRequest generates requests for GetRawRules
-func NewGetRawRulesRequest(server string, tenant string) (*http.Request, error) {
+func NewGetRawRulesRequest(server string, tenant Tenant) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1556,7 +1574,7 @@ func NewGetRawRulesRequest(server string, tenant string) (*http.Request, error) 
 }
 
 // NewSetRawRulesRequestWithBody generates requests for SetRawRules with any type of body
-func NewSetRawRulesRequestWithBody(server string, tenant string, contentType string, body io.Reader) (*http.Request, error) {
+func NewSetRawRulesRequestWithBody(server string, tenant Tenant, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1592,7 +1610,7 @@ func NewSetRawRulesRequestWithBody(server string, tenant string, contentType str
 }
 
 // NewGetSeriesRequest generates requests for GetSeries
-func NewGetSeriesRequest(server string, tenant string, params *GetSeriesParams) (*http.Request, error) {
+func NewGetSeriesRequest(server string, tenant Tenant, params *GetSeriesParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1721,28 +1739,28 @@ func WithBaseURL(baseURL string) ClientOption {
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
 	// GetLabelValues request
-	GetLabelValuesWithResponse(ctx context.Context, tenant string, labelName string, params *GetLabelValuesParams, reqEditors ...RequestEditorFn) (*GetLabelValuesResponse, error)
+	GetLabelValuesWithResponse(ctx context.Context, tenant Tenant, labelName string, params *GetLabelValuesParams, reqEditors ...RequestEditorFn) (*GetLabelValuesResponse, error)
 
 	// GetLabels request
-	GetLabelsWithResponse(ctx context.Context, tenant string, params *GetLabelsParams, reqEditors ...RequestEditorFn) (*GetLabelsResponse, error)
+	GetLabelsWithResponse(ctx context.Context, tenant Tenant, params *GetLabelsParams, reqEditors ...RequestEditorFn) (*GetLabelsResponse, error)
 
 	// GetInstantQuery request
-	GetInstantQueryWithResponse(ctx context.Context, tenant string, params *GetInstantQueryParams, reqEditors ...RequestEditorFn) (*GetInstantQueryResponse, error)
+	GetInstantQueryWithResponse(ctx context.Context, tenant Tenant, params *GetInstantQueryParams, reqEditors ...RequestEditorFn) (*GetInstantQueryResponse, error)
 
 	// GetRangeQuery request
-	GetRangeQueryWithResponse(ctx context.Context, tenant string, params *GetRangeQueryParams, reqEditors ...RequestEditorFn) (*GetRangeQueryResponse, error)
+	GetRangeQueryWithResponse(ctx context.Context, tenant Tenant, params *GetRangeQueryParams, reqEditors ...RequestEditorFn) (*GetRangeQueryResponse, error)
 
 	// GetRules request
-	GetRulesWithResponse(ctx context.Context, tenant string, params *GetRulesParams, reqEditors ...RequestEditorFn) (*GetRulesResponse, error)
+	GetRulesWithResponse(ctx context.Context, tenant Tenant, params *GetRulesParams, reqEditors ...RequestEditorFn) (*GetRulesResponse, error)
 
 	// GetRawRules request
-	GetRawRulesWithResponse(ctx context.Context, tenant string, reqEditors ...RequestEditorFn) (*GetRawRulesResponse, error)
+	GetRawRulesWithResponse(ctx context.Context, tenant Tenant, reqEditors ...RequestEditorFn) (*GetRawRulesResponse, error)
 
 	// SetRawRules request with any body
-	SetRawRulesWithBodyWithResponse(ctx context.Context, tenant string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetRawRulesResponse, error)
+	SetRawRulesWithBodyWithResponse(ctx context.Context, tenant Tenant, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetRawRulesResponse, error)
 
 	// GetSeries request
-	GetSeriesWithResponse(ctx context.Context, tenant string, params *GetSeriesParams, reqEditors ...RequestEditorFn) (*GetSeriesResponse, error)
+	GetSeriesWithResponse(ctx context.Context, tenant Tenant, params *GetSeriesParams, reqEditors ...RequestEditorFn) (*GetSeriesResponse, error)
 }
 
 type GetLabelValuesResponse struct {
@@ -1921,7 +1939,7 @@ func (r GetSeriesResponse) StatusCode() int {
 }
 
 // GetLabelValuesWithResponse request returning *GetLabelValuesResponse
-func (c *ClientWithResponses) GetLabelValuesWithResponse(ctx context.Context, tenant string, labelName string, params *GetLabelValuesParams, reqEditors ...RequestEditorFn) (*GetLabelValuesResponse, error) {
+func (c *ClientWithResponses) GetLabelValuesWithResponse(ctx context.Context, tenant Tenant, labelName string, params *GetLabelValuesParams, reqEditors ...RequestEditorFn) (*GetLabelValuesResponse, error) {
 	rsp, err := c.GetLabelValues(ctx, tenant, labelName, params, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1930,7 +1948,7 @@ func (c *ClientWithResponses) GetLabelValuesWithResponse(ctx context.Context, te
 }
 
 // GetLabelsWithResponse request returning *GetLabelsResponse
-func (c *ClientWithResponses) GetLabelsWithResponse(ctx context.Context, tenant string, params *GetLabelsParams, reqEditors ...RequestEditorFn) (*GetLabelsResponse, error) {
+func (c *ClientWithResponses) GetLabelsWithResponse(ctx context.Context, tenant Tenant, params *GetLabelsParams, reqEditors ...RequestEditorFn) (*GetLabelsResponse, error) {
 	rsp, err := c.GetLabels(ctx, tenant, params, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1939,7 +1957,7 @@ func (c *ClientWithResponses) GetLabelsWithResponse(ctx context.Context, tenant 
 }
 
 // GetInstantQueryWithResponse request returning *GetInstantQueryResponse
-func (c *ClientWithResponses) GetInstantQueryWithResponse(ctx context.Context, tenant string, params *GetInstantQueryParams, reqEditors ...RequestEditorFn) (*GetInstantQueryResponse, error) {
+func (c *ClientWithResponses) GetInstantQueryWithResponse(ctx context.Context, tenant Tenant, params *GetInstantQueryParams, reqEditors ...RequestEditorFn) (*GetInstantQueryResponse, error) {
 	rsp, err := c.GetInstantQuery(ctx, tenant, params, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1948,7 +1966,7 @@ func (c *ClientWithResponses) GetInstantQueryWithResponse(ctx context.Context, t
 }
 
 // GetRangeQueryWithResponse request returning *GetRangeQueryResponse
-func (c *ClientWithResponses) GetRangeQueryWithResponse(ctx context.Context, tenant string, params *GetRangeQueryParams, reqEditors ...RequestEditorFn) (*GetRangeQueryResponse, error) {
+func (c *ClientWithResponses) GetRangeQueryWithResponse(ctx context.Context, tenant Tenant, params *GetRangeQueryParams, reqEditors ...RequestEditorFn) (*GetRangeQueryResponse, error) {
 	rsp, err := c.GetRangeQuery(ctx, tenant, params, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1957,7 +1975,7 @@ func (c *ClientWithResponses) GetRangeQueryWithResponse(ctx context.Context, ten
 }
 
 // GetRulesWithResponse request returning *GetRulesResponse
-func (c *ClientWithResponses) GetRulesWithResponse(ctx context.Context, tenant string, params *GetRulesParams, reqEditors ...RequestEditorFn) (*GetRulesResponse, error) {
+func (c *ClientWithResponses) GetRulesWithResponse(ctx context.Context, tenant Tenant, params *GetRulesParams, reqEditors ...RequestEditorFn) (*GetRulesResponse, error) {
 	rsp, err := c.GetRules(ctx, tenant, params, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1966,7 +1984,7 @@ func (c *ClientWithResponses) GetRulesWithResponse(ctx context.Context, tenant s
 }
 
 // GetRawRulesWithResponse request returning *GetRawRulesResponse
-func (c *ClientWithResponses) GetRawRulesWithResponse(ctx context.Context, tenant string, reqEditors ...RequestEditorFn) (*GetRawRulesResponse, error) {
+func (c *ClientWithResponses) GetRawRulesWithResponse(ctx context.Context, tenant Tenant, reqEditors ...RequestEditorFn) (*GetRawRulesResponse, error) {
 	rsp, err := c.GetRawRules(ctx, tenant, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1975,7 +1993,7 @@ func (c *ClientWithResponses) GetRawRulesWithResponse(ctx context.Context, tenan
 }
 
 // SetRawRulesWithBodyWithResponse request with arbitrary body returning *SetRawRulesResponse
-func (c *ClientWithResponses) SetRawRulesWithBodyWithResponse(ctx context.Context, tenant string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetRawRulesResponse, error) {
+func (c *ClientWithResponses) SetRawRulesWithBodyWithResponse(ctx context.Context, tenant Tenant, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetRawRulesResponse, error) {
 	rsp, err := c.SetRawRulesWithBody(ctx, tenant, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1984,7 +2002,7 @@ func (c *ClientWithResponses) SetRawRulesWithBodyWithResponse(ctx context.Contex
 }
 
 // GetSeriesWithResponse request returning *GetSeriesResponse
-func (c *ClientWithResponses) GetSeriesWithResponse(ctx context.Context, tenant string, params *GetSeriesParams, reqEditors ...RequestEditorFn) (*GetSeriesResponse, error) {
+func (c *ClientWithResponses) GetSeriesWithResponse(ctx context.Context, tenant Tenant, params *GetSeriesParams, reqEditors ...RequestEditorFn) (*GetSeriesResponse, error) {
 	rsp, err := c.GetSeries(ctx, tenant, params, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -2194,28 +2212,28 @@ func ParseGetSeriesResponse(rsp *http.Response) (*GetSeriesResponse, error) {
 type ServerInterface interface {
 	// Get label values for a tenant
 	// (GET /api/metrics/v1/{tenant}/api/v1/label/{label_name}/values)
-	GetLabelValues(w http.ResponseWriter, r *http.Request, tenant string, labelName string, params GetLabelValuesParams)
+	GetLabelValues(w http.ResponseWriter, r *http.Request, tenant Tenant, labelName string, params GetLabelValuesParams)
 	// Get all labels for a tenant
 	// (GET /api/metrics/v1/{tenant}/api/v1/labels)
-	GetLabels(w http.ResponseWriter, r *http.Request, tenant string, params GetLabelsParams)
+	GetLabels(w http.ResponseWriter, r *http.Request, tenant Tenant, params GetLabelsParams)
 	// Evaluate instant queries for a tenant
 	// (GET /api/metrics/v1/{tenant}/api/v1/query)
-	GetInstantQuery(w http.ResponseWriter, r *http.Request, tenant string, params GetInstantQueryParams)
+	GetInstantQuery(w http.ResponseWriter, r *http.Request, tenant Tenant, params GetInstantQueryParams)
 	// Evaluate range queries for a tenant
 	// (GET /api/metrics/v1/{tenant}/api/v1/query_range)
-	GetRangeQuery(w http.ResponseWriter, r *http.Request, tenant string, params GetRangeQueryParams)
+	GetRangeQuery(w http.ResponseWriter, r *http.Request, tenant Tenant, params GetRangeQueryParams)
 	// Get Rules for a tenant in JSON form
 	// (GET /api/metrics/v1/{tenant}/api/v1/rules)
-	GetRules(w http.ResponseWriter, r *http.Request, tenant string, params GetRulesParams)
+	GetRules(w http.ResponseWriter, r *http.Request, tenant Tenant, params GetRulesParams)
 	// Lists all configured rules for a tenant in YAML form
 	// (GET /api/metrics/v1/{tenant}/api/v1/rules/raw)
-	GetRawRules(w http.ResponseWriter, r *http.Request, tenant string)
+	GetRawRules(w http.ResponseWriter, r *http.Request, tenant Tenant)
 	// Set/overwrite the rules for a tenant
 	// (PUT /api/metrics/v1/{tenant}/api/v1/rules/raw)
-	SetRawRules(w http.ResponseWriter, r *http.Request, tenant string)
+	SetRawRules(w http.ResponseWriter, r *http.Request, tenant Tenant)
 	// Get series for a tenant
 	// (GET /api/metrics/v1/{tenant}/api/v1/series)
-	GetSeries(w http.ResponseWriter, r *http.Request, tenant string, params GetSeriesParams)
+	GetSeries(w http.ResponseWriter, r *http.Request, tenant Tenant, params GetSeriesParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -2234,7 +2252,7 @@ func (siw *ServerInterfaceWrapper) GetLabelValues(w http.ResponseWriter, r *http
 	var err error
 
 	// ------------- Path parameter "tenant" -------------
-	var tenant string
+	var tenant Tenant
 
 	err = runtime.BindStyledParameter("simple", false, "tenant", chi.URLParam(r, "tenant"), &tenant)
 	if err != nil {
@@ -2305,7 +2323,7 @@ func (siw *ServerInterfaceWrapper) GetLabels(w http.ResponseWriter, r *http.Requ
 	var err error
 
 	// ------------- Path parameter "tenant" -------------
-	var tenant string
+	var tenant Tenant
 
 	err = runtime.BindStyledParameter("simple", false, "tenant", chi.URLParam(r, "tenant"), &tenant)
 	if err != nil {
@@ -2367,7 +2385,7 @@ func (siw *ServerInterfaceWrapper) GetInstantQuery(w http.ResponseWriter, r *htt
 	var err error
 
 	// ------------- Path parameter "tenant" -------------
-	var tenant string
+	var tenant Tenant
 
 	err = runtime.BindStyledParameter("simple", false, "tenant", chi.URLParam(r, "tenant"), &tenant)
 	if err != nil {
@@ -2389,17 +2407,6 @@ func (siw *ServerInterfaceWrapper) GetInstantQuery(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// ------------- Optional query parameter "time" -------------
-	if paramValue := r.URL.Query().Get("time"); paramValue != "" {
-
-	}
-
-	err = runtime.BindQueryParameter("form", true, false, "time", r.URL.Query(), &params.Time)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "time", Err: err})
-		return
-	}
-
 	// ------------- Optional query parameter "timeout" -------------
 	if paramValue := r.URL.Query().Get("timeout"); paramValue != "" {
 
@@ -2408,6 +2415,17 @@ func (siw *ServerInterfaceWrapper) GetInstantQuery(w http.ResponseWriter, r *htt
 	err = runtime.BindQueryParameter("form", true, false, "timeout", r.URL.Query(), &params.Timeout)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "timeout", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "time" -------------
+	if paramValue := r.URL.Query().Get("time"); paramValue != "" {
+
+	}
+
+	err = runtime.BindQueryParameter("form", true, false, "time", r.URL.Query(), &params.Time)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "time", Err: err})
 		return
 	}
 
@@ -2429,7 +2447,7 @@ func (siw *ServerInterfaceWrapper) GetRangeQuery(w http.ResponseWriter, r *http.
 	var err error
 
 	// ------------- Path parameter "tenant" -------------
-	var tenant string
+	var tenant Tenant
 
 	err = runtime.BindStyledParameter("simple", false, "tenant", chi.URLParam(r, "tenant"), &tenant)
 	if err != nil {
@@ -2473,17 +2491,6 @@ func (siw *ServerInterfaceWrapper) GetRangeQuery(w http.ResponseWriter, r *http.
 		return
 	}
 
-	// ------------- Optional query parameter "step" -------------
-	if paramValue := r.URL.Query().Get("step"); paramValue != "" {
-
-	}
-
-	err = runtime.BindQueryParameter("form", true, false, "step", r.URL.Query(), &params.Step)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "step", Err: err})
-		return
-	}
-
 	// ------------- Optional query parameter "timeout" -------------
 	if paramValue := r.URL.Query().Get("timeout"); paramValue != "" {
 
@@ -2492,6 +2499,17 @@ func (siw *ServerInterfaceWrapper) GetRangeQuery(w http.ResponseWriter, r *http.
 	err = runtime.BindQueryParameter("form", true, false, "timeout", r.URL.Query(), &params.Timeout)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "timeout", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "step" -------------
+	if paramValue := r.URL.Query().Get("step"); paramValue != "" {
+
+	}
+
+	err = runtime.BindQueryParameter("form", true, false, "step", r.URL.Query(), &params.Step)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "step", Err: err})
 		return
 	}
 
@@ -2513,7 +2531,7 @@ func (siw *ServerInterfaceWrapper) GetRules(w http.ResponseWriter, r *http.Reque
 	var err error
 
 	// ------------- Path parameter "tenant" -------------
-	var tenant string
+	var tenant Tenant
 
 	err = runtime.BindStyledParameter("simple", false, "tenant", chi.URLParam(r, "tenant"), &tenant)
 	if err != nil {
@@ -2564,7 +2582,7 @@ func (siw *ServerInterfaceWrapper) GetRawRules(w http.ResponseWriter, r *http.Re
 	var err error
 
 	// ------------- Path parameter "tenant" -------------
-	var tenant string
+	var tenant Tenant
 
 	err = runtime.BindStyledParameter("simple", false, "tenant", chi.URLParam(r, "tenant"), &tenant)
 	if err != nil {
@@ -2590,7 +2608,7 @@ func (siw *ServerInterfaceWrapper) SetRawRules(w http.ResponseWriter, r *http.Re
 	var err error
 
 	// ------------- Path parameter "tenant" -------------
-	var tenant string
+	var tenant Tenant
 
 	err = runtime.BindStyledParameter("simple", false, "tenant", chi.URLParam(r, "tenant"), &tenant)
 	if err != nil {
@@ -2616,7 +2634,7 @@ func (siw *ServerInterfaceWrapper) GetSeries(w http.ResponseWriter, r *http.Requ
 	var err error
 
 	// ------------- Path parameter "tenant" -------------
-	var tenant string
+	var tenant Tenant
 
 	err = runtime.BindStyledParameter("simple", false, "tenant", chi.URLParam(r, "tenant"), &tenant)
 	if err != nil {

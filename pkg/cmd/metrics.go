@@ -33,13 +33,16 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 
 			params := &fetcher.GetSeriesParams{}
 			if len(seriesMatchers) > 0 {
-				params.Match = &seriesMatchers
+				matcher := fetcher.SeriesMatcher(seriesMatchers)
+				params.Match = &matcher
 			}
 			if seriesStart != "" {
-				params.Start = &seriesStart
+				start := fetcher.StartTS(seriesStart)
+				params.Start = &start
 			}
 			if seriesEnd != "" {
-				params.End = &seriesEnd
+				end := fetcher.EndTS(seriesEnd)
+				params.End = &end
 			}
 
 			resp, err := f.GetSeriesWithResponse(ctx, currentTenant, params)
@@ -69,13 +72,16 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 
 			params := &fetcher.GetLabelsParams{}
 			if len(labelMatchers) > 0 {
-				params.Match = &labelMatchers
+				matcher := fetcher.SeriesMatcher(labelMatchers)
+				params.Match = &matcher
 			}
 			if labelStart != "" {
-				params.Start = &labelStart
+				start := fetcher.StartTS(labelStart)
+				params.Start = &start
 			}
 			if labelEnd != "" {
-				params.End = &labelEnd
+				end := fetcher.EndTS(labelEnd)
+				params.End = &end
 			}
 
 			resp, err := f.GetLabelsWithResponse(ctx, currentTenant, params)
@@ -105,13 +111,16 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 
 			params := &fetcher.GetLabelValuesParams{}
 			if len(labelValuesMatchers) > 0 {
-				params.Match = &labelValuesMatchers
+				matcher := fetcher.SeriesMatcher(labelValuesMatchers)
+				params.Match = &matcher
 			}
 			if labelValuesStart != "" {
-				params.Start = &labelValuesStart
+				start := fetcher.StartTS(labelValuesStart)
+				params.Start = &start
 			}
 			if labelValuesEnd != "" {
-				params.End = &labelValuesEnd
+				end := fetcher.EndTS(labelValuesEnd)
+				params.End = &end
 			}
 
 			resp, err := f.GetLabelValuesWithResponse(ctx, currentTenant, labelName, params)
