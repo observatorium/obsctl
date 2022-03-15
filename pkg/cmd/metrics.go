@@ -3,11 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/go-kit/log/level"
-	"github.com/observatorium/obsctl/pkg/config"
 	"github.com/observatorium/obsctl/pkg/fetcher"
 	"github.com/spf13/cobra"
 )
@@ -158,28 +156,26 @@ func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 			}
 			defer file.Close()
 
-			data, err := ioutil.ReadAll(file)
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
-				return fmt.Errorf("reading rule file: %w", err)
+				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), string(data))
-
-			b, err := config.DoMetricsPutReqWithYAML(ctx, logger, "/api/v1/rules/raw", data)
+			resp, err := f.SetRawRulesWithBodyWithResponse(ctx, currentTenant, "application/yaml", file)
 			if err != nil {
-				if len(b) != 0 {
-					fmt.Fprintln(cmd.OutOrStdout(), string(b))
-					return err
-				}
-				return err
+				return fmt.Errorf("getting response: %w", err)
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), string(b))
+			fmt.Fprintln(os.Stdout, string(resp.Body))
 			return nil
 		},
 	}
 
 	cmd.Flags().StringVar(&ruleFilePath, "rule.file", "", "Path to Rules configuration file, which will be set for a tenant.")
+	err := cmd.MarkFlagRequired("rule.file")
+	if err != nil {
+		panic(err)
+	}
 
 	return cmd
 }
