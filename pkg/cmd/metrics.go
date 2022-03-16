@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/go-kit/log/level"
 	"github.com/observatorium/obsctl/pkg/fetcher"
 	"github.com/spf13/cobra"
 )
 
-// TODO(saswatamcode): Add flags for URL query params.
 func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
@@ -33,16 +31,13 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 
 			params := &fetcher.GetSeriesParams{}
 			if len(seriesMatchers) > 0 {
-				matcher := fetcher.SeriesMatcher(seriesMatchers)
-				params.Match = &matcher
+				params.Match = (*fetcher.SeriesMatcher)(&seriesMatchers)
 			}
 			if seriesStart != "" {
-				start := fetcher.StartTS(seriesStart)
-				params.Start = &start
+				params.Start = (*fetcher.StartTS)(&seriesStart)
 			}
 			if seriesEnd != "" {
-				end := fetcher.EndTS(seriesEnd)
-				params.End = &end
+				params.End = (*fetcher.EndTS)(&seriesEnd)
 			}
 
 			resp, err := f.GetSeriesWithResponse(ctx, currentTenant, params)
@@ -72,16 +67,13 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 
 			params := &fetcher.GetLabelsParams{}
 			if len(labelMatchers) > 0 {
-				matcher := fetcher.SeriesMatcher(labelMatchers)
-				params.Match = &matcher
+				params.Match = (*fetcher.SeriesMatcher)(&labelMatchers)
 			}
 			if labelStart != "" {
-				start := fetcher.StartTS(labelStart)
-				params.Start = &start
+				params.Start = (*fetcher.StartTS)(&labelStart)
 			}
 			if labelEnd != "" {
-				end := fetcher.EndTS(labelEnd)
-				params.End = &end
+				params.End = (*fetcher.EndTS)(&labelEnd)
 			}
 
 			resp, err := f.GetLabelsWithResponse(ctx, currentTenant, params)
@@ -111,16 +103,13 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 
 			params := &fetcher.GetLabelValuesParams{}
 			if len(labelValuesMatchers) > 0 {
-				matcher := fetcher.SeriesMatcher(labelValuesMatchers)
-				params.Match = &matcher
+				params.Match = (*fetcher.SeriesMatcher)(&labelValuesMatchers)
 			}
 			if labelValuesStart != "" {
-				start := fetcher.StartTS(labelValuesStart)
-				params.Start = &start
+				params.Start = (*fetcher.StartTS)(&labelValuesStart)
 			}
 			if labelValuesEnd != "" {
-				end := fetcher.EndTS(labelValuesEnd)
-				params.End = &end
+				params.End = (*fetcher.EndTS)(&labelValuesEnd)
 			}
 
 			resp, err := f.GetLabelValuesWithResponse(ctx, currentTenant, labelName, params)
@@ -243,17 +232,80 @@ func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func NewMetricsQueryCmd(ctx context.Context, path ...string) *cobra.Command {
+func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
+	var isRange bool
+	var evalTime, timeout, start, end, step string
 	cmd := &cobra.Command{
 		Use:     "query",
 		Short:   "Query metrics for a tenant.",
-		Long:    "Query metrics for a tenant. Pass a single valid PromQL query to fetch results for.",
+		Long:    "Query metrics for a tenant. Can get results for both instant and range queries. Pass a single valid PromQL query to fetch results for.",
 		Example: `obsctl query "prometheus_http_request_total"`,
 		Args:    cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "query not implemented yet")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if args[0] == "" {
+				return fmt.Errorf("no query provided")
+			}
+
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
+			if err != nil {
+				return fmt.Errorf("custom fetcher: %w", err)
+			}
+
+			query := fetcher.Query(args[0])
+
+			if isRange {
+				params := &fetcher.GetRangeQueryParams{Query: &query}
+				if timeout != "" {
+					params.Timeout = (*fetcher.QueryTimeout)(&timeout)
+				}
+
+				if start == "" || end == "" {
+					return fmt.Errorf("start/end timestamp not provided for range query")
+				}
+
+				params.Start = (*fetcher.StartTS)(&start)
+				params.End = (*fetcher.EndTS)(&end)
+
+				if step != "" {
+					params.Step = &step
+				}
+
+				resp, err := f.GetRangeQueryWithResponse(ctx, currentTenant, params)
+				if err != nil {
+					return fmt.Errorf("getting response: %w", err)
+				}
+
+				return prettyPrintJSON(resp.Body)
+			} else {
+				params := &fetcher.GetInstantQueryParams{Query: &query}
+				if evalTime != "" {
+					params.Time = &evalTime
+				}
+				if timeout != "" {
+					params.Timeout = (*fetcher.QueryTimeout)(&timeout)
+				}
+
+				resp, err := f.GetInstantQueryWithResponse(ctx, currentTenant, params)
+				if err != nil {
+					return fmt.Errorf("getting response: %w", err)
+				}
+
+				return prettyPrintJSON(resp.Body)
+			}
 		},
 	}
+
+	// Flags for instant query.
+	cmd.Flags().StringVar(&evalTime, "time", "", "Evaluation timestamp. Only used if --range is false.")
+
+	// Flags for range query.
+	cmd.Flags().BoolVar(&isRange, "range", false, "If true, query will be evaluated as a range query. See https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries.")
+	cmd.Flags().StringVarP(&start, "start", "s", "", "Start timestamp. Must be provided if --range is true.")
+	cmd.Flags().StringVarP(&end, "end", "e", "", "End timestamp. Must be provided if --range is true.")
+	cmd.Flags().StringVar(&step, "step", "", "Query resolution step width. Only used if --range is provided.")
+
+	// Common flags.
+	cmd.Flags().StringVar(&timeout, "timeout", "", "Evaluation timeout. Optional.")
 
 	return cmd
 }
