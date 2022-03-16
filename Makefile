@@ -112,4 +112,19 @@ test-e2e:
 	@kill -9 `pidof hydra`
 	
 pkg/fetcher/fetcher.gen.go: $(OAPI_CODEGEN) pkg/fetcher/spec.yaml
-	$(OAPI_CODEGEN) -generate types,client,chi-server -package fetcher pkg/fetcher/spec.yaml | sed 's|gopkg.in/yaml.v2|github.com/ghodss/yaml|g' | gofmt -s > $@
+	$(OAPI_CODEGEN) -generate types,client -import-mapping="./parameters.yaml:github.com/observatorium/obsctl/pkg/fetcher,./models/models.yaml:github.com/observatorium/obsctl/pkg/fetcher/models,./responses/responses.yaml:github.com/observatorium/obsctl/pkg/fetcher/responses" -package fetcher pkg/fetcher/spec.yaml | sed 's|gopkg.in/yaml.v2|github.com/ghodss/yaml|g' | gofmt -s > $@
+
+pkg/fetcher/parameters.gen.go: $(OAPI_CODEGEN) pkg/fetcher/parameters.yaml
+	$(OAPI_CODEGEN) -generate types,skip-prune -package fetcher pkg/fetcher/parameters.yaml | sed 's|gopkg.in/yaml.v2|github.com/ghodss/yaml|g' | gofmt -s > $@
+
+pkg/fetcher/models/models.gen.go: $(OAPI_CODEGEN) pkg/fetcher/models/models.yaml
+	$(OAPI_CODEGEN) -generate types,skip-prune -package models pkg/fetcher/models/models.yaml | sed 's|gopkg.in/yaml.v2|github.com/ghodss/yaml|g' | gofmt -s > $@
+
+pkg/fetcher/responses/responses.gen.go: $(OAPI_CODEGEN) pkg/fetcher/responses/responses.yaml
+	$(OAPI_CODEGEN) -generate types,skip-prune -import-mapping="../models/models.yaml:github.com/observatorium/obsctl/pkg/fetcher/models" -package responses pkg/fetcher/responses/responses.yaml | sed 's|gopkg.in/yaml.v2|github.com/ghodss/yaml|g' | gofmt -s > $@
+
+gen-oapi-client: 
+	$(MAKE) pkg/fetcher/parameters.gen.go
+	$(MAKE) pkg/fetcher/models/models.gen.go
+	$(MAKE) pkg/fetcher/responses/responses.gen.go
+	$(MAKE) pkg/fetcher/fetcher.gen.go

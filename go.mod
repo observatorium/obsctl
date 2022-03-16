@@ -9,7 +9,6 @@ require (
 	github.com/efficientgo/e2e v0.11.2-0.20220316132807-bdd9968326ac
 	github.com/efficientgo/tools/core v0.0.0-20210609125236-d73259166f20
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-kit/log v0.2.0
 	github.com/google/uuid v1.2.0
 	github.com/oklog/run v1.1.0
