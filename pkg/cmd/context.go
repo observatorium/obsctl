@@ -116,6 +116,10 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 
 			for k, v := range conf.APIs {
 				fmt.Fprintf(os.Stdout, "%s\n", string(k))
+				if len(v.Contexts) == 0 {
+					fmt.Fprint(os.Stdout, "\t- no tenants yet, currently not usable\n")
+				}
+
 				for kc := range v.Contexts {
 					fmt.Fprintf(os.Stdout, "\t- %s\n", string(kc))
 				}
