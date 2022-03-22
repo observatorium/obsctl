@@ -76,7 +76,7 @@ export GOCACHE=/tmp/cache
 test:
 	@echo ">> running unit tests (without cache)"
 	@rm -rf $(GOCACHE)
-	@go test -v -timeout=30m $(shell go list ./... | grep -v /vendor/);
+	@go test -v -timeout=30m $(shell go list ./... | grep -v e2e);
 
 .PHONY: check-git
 check-git:

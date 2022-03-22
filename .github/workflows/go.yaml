@@ -56,3 +56,9 @@ jobs:
           GOBIN: /tmp/.bin
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: make test
+
+      - name: Run e2e tests.
+        env:
+          GOBIN: /tmp/.bin
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: make test-e2e
