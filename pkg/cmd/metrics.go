@@ -12,7 +12,7 @@ import (
 )
 
 // TODO(saswatamcode): Add flags for URL query params.
-func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
+func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
 		Short: "Read series, labels & rules (JSON/YAML) of a tenant.",
@@ -24,12 +24,14 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get series of a tenant.",
 		Long:  "Get series of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/series")
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/series", path...)
 			if err != nil {
 				return err
 			}
 
-			return prettyPrintJSON(b)
+			fmt.Fprintln(cmd.OutOrStdout(), "this should work")
+
+			return prettyPrintJSON(b, cmd.OutOrStdout())
 		},
 	}
 
@@ -38,12 +40,12 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get labels of a tenant.",
 		Long:  "Get labels of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/labels")
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/labels", path...)
 			if err != nil {
 				return err
 			}
 
-			return prettyPrintJSON(b)
+			return prettyPrintJSON(b, cmd.OutOrStdout())
 		},
 	}
 
@@ -53,12 +55,12 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get label values of a tenant.",
 		Long:  "Get label values of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/label/"+labelName+"/values")
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/label/"+labelName+"/values", path...)
 			if err != nil {
 				return err
 			}
 
-			return prettyPrintJSON(b)
+			return prettyPrintJSON(b, cmd.OutOrStdout())
 		},
 	}
 	labelValuesCmd.Flags().StringVar(&labelName, "name", "", "Name of the label to fetch values for.")
@@ -72,12 +74,12 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get rules of a tenant.",
 		Long:  "Get rules of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules")
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules", path...)
 			if err != nil {
 				return err
 			}
 
-			return prettyPrintJSON(b)
+			return prettyPrintJSON(b, cmd.OutOrStdout())
 		},
 	}
 
@@ -86,12 +88,12 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Short: "Get configured rules of a tenant.",
 		Long:  "Get configured rules of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules/raw")
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules/raw", path...)
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintln(os.Stdout, string(b))
+			fmt.Fprintln(cmd.OutOrStdout(), string(b))
 			return nil
 		},
 	}
@@ -105,7 +107,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
+func NewMetricsSetCmd(ctx context.Context, path ...string) *cobra.Command {
 	var ruleFilePath string
 	cmd := &cobra.Command{
 		Use:   "set",
@@ -123,14 +125,14 @@ func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("reading rule file: %w", err)
 			}
 
-			fmt.Fprintln(os.Stdout, string(data))
+			fmt.Fprintln(cmd.OutOrStdout(), string(data))
 
-			b, err := config.DoMetricsPutReqWithYAML(ctx, logger, "/api/v1/rules/raw", data)
+			b, err := config.DoMetricsPutReqWithYAML(ctx, logger, "/api/v1/rules/raw", data, path...)
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintln(os.Stdout, string(b))
+			fmt.Fprintln(cmd.OutOrStdout(), string(b))
 			return nil
 		},
 	}
@@ -140,7 +142,7 @@ func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
+func NewMetricsQueryCmd(ctx context.Context, path ...string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "query",
 		Short:   "Query metrics for a tenant.",
@@ -155,16 +157,16 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func NewMetricsCmd(ctx context.Context) *cobra.Command {
+func NewMetricsCmd(ctx context.Context, path ...string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "metrics",
 		Short: "Metrics based operations for Observatorium.",
 		Long:  "Metrics based operations for Observatorium.",
 	}
 
-	cmd.AddCommand(NewMetricsGetCmd(ctx))
-	cmd.AddCommand(NewMetricsSetCmd(ctx))
-	cmd.AddCommand(NewMetricsQueryCmd(ctx))
+	cmd.AddCommand(NewMetricsGetCmd(ctx, path...))
+	cmd.AddCommand(NewMetricsSetCmd(ctx, path...))
+	cmd.AddCommand(NewMetricsQueryCmd(ctx, path...))
 
 	return cmd
 }

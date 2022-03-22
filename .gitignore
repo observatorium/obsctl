@@ -18,3 +18,6 @@ vendor/
 
 .idea/
 .envrc
+
+test/e2e/e2e_*
+test/e2e/tmp
