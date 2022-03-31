@@ -5,11 +5,12 @@ import (
 	"fmt"
 
 	"github.com/go-kit/log"
+	"github.com/observatorium/api/client"
 	"github.com/observatorium/obsctl/pkg/config"
 )
 
 // NewCustomFetcher returns a ClientWithResponses which is configured to use oauth HTTP Client.
-func NewCustomFetcher(ctx context.Context, logger log.Logger) (*ClientWithResponses, Tenant, error) {
+func NewCustomFetcher(ctx context.Context, logger log.Logger) (*client.ClientWithResponses, client.Tenant, error) {
 	cfg, err := config.Read(logger)
 	if err != nil {
 		return nil, "", fmt.Errorf("getting reading config: %w", err)
@@ -20,7 +21,7 @@ func NewCustomFetcher(ctx context.Context, logger log.Logger) (*ClientWithRespon
 		return nil, "", fmt.Errorf("getting current client: %w", err)
 	}
 
-	fc, err := NewClientWithResponses(cfg.APIs[cfg.Current.API].URL, func(f *Client) error {
+	fc, err := client.NewClientWithResponses(cfg.APIs[cfg.Current.API].URL, func(f *client.Client) error {
 		f.Client = c
 		return nil
 	})
@@ -28,5 +29,5 @@ func NewCustomFetcher(ctx context.Context, logger log.Logger) (*ClientWithRespon
 		return nil, "", fmt.Errorf("getting fetcher client: %w", err)
 	}
 
-	return fc, Tenant(cfg.Current.Tenant), nil
+	return fc, client.Tenant(cfg.Current.Tenant), nil
 }

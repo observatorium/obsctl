@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/observatorium/api/client"
 	"github.com/observatorium/obsctl/pkg/fetcher"
 	"github.com/spf13/cobra"
 )
@@ -29,15 +30,15 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			params := &fetcher.GetSeriesParams{}
+			params := &client.GetSeriesParams{}
 			if len(seriesMatchers) > 0 {
-				params.Match = (*fetcher.SeriesMatcher)(&seriesMatchers)
+				params.Match = (*client.SeriesMatcher)(&seriesMatchers)
 			}
 			if seriesStart != "" {
-				params.Start = (*fetcher.StartTS)(&seriesStart)
+				params.Start = (*client.StartTS)(&seriesStart)
 			}
 			if seriesEnd != "" {
-				params.End = (*fetcher.EndTS)(&seriesEnd)
+				params.End = (*client.EndTS)(&seriesEnd)
 			}
 
 			resp, err := f.GetSeriesWithResponse(ctx, currentTenant, params)
@@ -65,15 +66,15 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			params := &fetcher.GetLabelsParams{}
+			params := &client.GetLabelsParams{}
 			if len(labelMatchers) > 0 {
-				params.Match = (*fetcher.SeriesMatcher)(&labelMatchers)
+				params.Match = (*client.SeriesMatcher)(&labelMatchers)
 			}
 			if labelStart != "" {
-				params.Start = (*fetcher.StartTS)(&labelStart)
+				params.Start = (*client.StartTS)(&labelStart)
 			}
 			if labelEnd != "" {
-				params.End = (*fetcher.EndTS)(&labelEnd)
+				params.End = (*client.EndTS)(&labelEnd)
 			}
 
 			resp, err := f.GetLabelsWithResponse(ctx, currentTenant, params)
@@ -101,15 +102,15 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			params := &fetcher.GetLabelValuesParams{}
+			params := &client.GetLabelValuesParams{}
 			if len(labelValuesMatchers) > 0 {
-				params.Match = (*fetcher.SeriesMatcher)(&labelValuesMatchers)
+				params.Match = (*client.SeriesMatcher)(&labelValuesMatchers)
 			}
 			if labelValuesStart != "" {
-				params.Start = (*fetcher.StartTS)(&labelValuesStart)
+				params.Start = (*client.StartTS)(&labelValuesStart)
 			}
 			if labelValuesEnd != "" {
-				params.End = (*fetcher.EndTS)(&labelValuesEnd)
+				params.End = (*client.EndTS)(&labelValuesEnd)
 			}
 
 			resp, err := f.GetLabelValuesWithResponse(ctx, currentTenant, labelName, params)
@@ -143,7 +144,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			params := &fetcher.GetRulesParams{}
+			params := &client.GetRulesParams{}
 			if len(ruleMatchers) > 0 {
 				params.Match = &ruleMatchers
 			}
@@ -251,20 +252,20 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			query := fetcher.Query(args[0])
+			query := client.Query(args[0])
 
 			if isRange {
-				params := &fetcher.GetRangeQueryParams{Query: &query}
+				params := &client.GetRangeQueryParams{Query: &query}
 				if timeout != "" {
-					params.Timeout = (*fetcher.QueryTimeout)(&timeout)
+					params.Timeout = (*client.QueryTimeout)(&timeout)
 				}
 
 				if start == "" || end == "" {
 					return fmt.Errorf("start/end timestamp not provided for range query")
 				}
 
-				params.Start = (*fetcher.StartTS)(&start)
-				params.End = (*fetcher.EndTS)(&end)
+				params.Start = (*client.StartTS)(&start)
+				params.End = (*client.EndTS)(&end)
 
 				if step != "" {
 					params.Step = &step
@@ -277,12 +278,12 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 
 				return prettyPrintJSON(resp.Body)
 			} else {
-				params := &fetcher.GetInstantQueryParams{Query: &query}
+				params := &client.GetInstantQueryParams{Query: &query}
 				if evalTime != "" {
 					params.Time = &evalTime
 				}
 				if timeout != "" {
-					params.Timeout = (*fetcher.QueryTimeout)(&timeout)
+					params.Timeout = (*client.QueryTimeout)(&timeout)
 				}
 
 				resp, err := f.GetInstantQueryWithResponse(ctx, currentTenant, params)
