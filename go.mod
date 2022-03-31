@@ -38,4 +38,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace github.com/observatorium/api v1.0.0 => ../api // TODO(saswatamcode): Remove once https://github.com/observatorium/api/pull/270 is merged.
+replace github.com/observatorium/api v1.0.0 => github.com/saswatamcode/api v0.1.3-0.20220331144432-9ccd3e239857 // TODO(saswatamcode): Remove once https://github.com/observatorium/api/pull/270 is merged.
