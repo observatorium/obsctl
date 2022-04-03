@@ -15,13 +15,11 @@ import (
 	"github.com/observatorium/obsctl/pkg/cmd"
 )
 
-// TODO(saswatamcode): Make this test multi-API somehow.
-
 const (
 	envName       = "obsctl-test"
 	hydraURL      = "172.17.0.1:4444" // TODO(saswatamcode): Make this macOS-friendly.
 	noOfTenants   = 2                 // Configure number of tenants.
-	defaultTenant = 1                 // Set default tenant to use. TODO(saswatamcode): Add multitenant tests.
+	defaultTenant = 1                 // Set default tenant to use.
 )
 
 // preTest spins up all services required for metrics:
@@ -53,14 +51,14 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 	testutil.Ok(t, e2e.StartAndWaitReady(api))
 	testutil.Ok(t, os.MkdirAll(filepath.Join(e.SharedDir(), "obsctl"), 0750)) // Create config file beforehand.
 
-	createObsctlConfigJson(t, e, hydraURL, "http://"+api.Endpoint("https")+"/", noOfTenants, defaultTenant)
+	createObsctlConfigJson(t, e, hydraURL, "http://"+api.Endpoint("http")+"/", noOfTenants, defaultTenant)
 
 	token := obtainToken(t, hydraURL, defaultTenant)
 
 	up, err := newUpRun(
 		e, "up-metrics-read-write",
-		"http://"+api.InternalEndpoint("https")+"/api/metrics/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/api/v1/query",
-		"http://"+api.InternalEndpoint("https")+"/api/metrics/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/api/v1/receive",
+		"http://"+api.InternalEndpoint("http")+"/api/metrics/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/api/v1/query",
+		"http://"+api.InternalEndpoint("http")+"/api/metrics/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/api/v1/receive",
 		withToken(token),
 		withRunParameters(&runParams{period: "500ms", threshold: "1", latency: "10s", duration: "0"}),
 	)

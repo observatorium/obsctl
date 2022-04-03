@@ -1,11 +1,9 @@
 package e2e
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/efficientgo/e2e"
@@ -21,7 +19,6 @@ const (
 	thanosImage           = "quay.io/thanos/thanos:v0.25.1"
 	thanosRuleSyncerImage = "quay.io/observatorium/thanos-rule-syncer:main-2022-02-01-d4c24bc"
 	rulesObjectStoreImage = "quay.io/observatorium/rules-objstore:main-2022-01-19-8650540"
-	minioImage            = "minio/minio:RELEASE.2022-03-03T21-21-16Z"
 
 	logLevelError = "error"
 	// logLevelDebug = "debug"
@@ -51,19 +48,19 @@ func withRulesEndpoint(rulesEndpoint string) apiOption {
 func newObservatoriumAPIService(
 	e e2e.Environment,
 	options ...apiOption,
-) (*e2e.InstrumentedRunnable, error) {
+) (e2e.InstrumentedRunnable, error) {
 	opts := apiOptions{}
 	for _, o := range options {
 		o(&opts)
 	}
 
 	ports := map[string]int{
-		"https":         8443,
+		"http":          8443,
 		"http-internal": 8448,
 	}
 
 	args := e2e.BuildArgs(map[string]string{
-		"--web.listen":           ":" + strconv.Itoa(ports["https"]),
+		"--web.listen":           ":" + strconv.Itoa(ports["http"]),
 		"--web.internal.listen":  ":" + strconv.Itoa(ports["http-internal"]),
 		"--web.healthchecks.url": "http://127.0.0.1:8443",
 		"--rbac.config":          filepath.Join("/shared/config", "rbac.yaml"),
@@ -80,7 +77,7 @@ func newObservatoriumAPIService(
 		args = append(args, "--metrics.rules.endpoint="+"http://"+opts.metricsRulesEndpoint)
 	}
 
-	return e2e.NewInstrumentedRunnable(e, "observatorium_api", ports, "http-internal").Init(
+	return e2e.NewInstrumentedRunnable(e, "observatorium_api").WithPorts(ports, "http-internal").Init(
 		e2e.StartOptions{
 			Image:     apiImage,
 			Command:   e2e.NewCommandWithoutEntrypoint("observatorium-api", args...),
@@ -90,7 +87,7 @@ func newObservatoriumAPIService(
 	), nil
 }
 
-func newThanosReceiveService(e e2e.Environment) *e2e.InstrumentedRunnable {
+func newThanosReceiveService(e e2e.Environment) e2e.InstrumentedRunnable {
 	ports := map[string]int{
 		"http":         10902,
 		"grpc":         10901,
@@ -107,7 +104,7 @@ func newThanosReceiveService(e e2e.Environment) *e2e.InstrumentedRunnable {
 		"--tsdb.path":              "/tmp",
 	})
 
-	return e2e.NewInstrumentedRunnable(e, "thanos-receive", ports, "http").Init(
+	return e2e.NewInstrumentedRunnable(e, "thanos-receive").WithPorts(ports, "http").Init(
 		e2e.StartOptions{
 			Image:     thanosImage,
 			Command:   e2e.NewCommand("receive", args...),
@@ -117,43 +114,7 @@ func newThanosReceiveService(e e2e.Environment) *e2e.InstrumentedRunnable {
 	)
 }
 
-func newMinioService(e e2e.Environment) *e2e.InstrumentedRunnable {
-	bucket := "rulesobjstore"
-	userID := strconv.Itoa(os.Getuid())
-	ports := map[string]int{e2edb.AccessPortName: 8090}
-	envVars := []string{
-		"MINIO_ROOT_USER=" + e2edb.MinioAccessKey,
-		"MINIO_ROOT_PASSWORD=" + e2edb.MinioSecretKey,
-		"MINIO_BROWSER=" + "off",
-		"ENABLE_HTTPS=" + "0",
-		// https://docs.min.io/docs/minio-kms-quickstart-guide.html
-		"MINIO_KMS_KES_ENDPOINT=" + "https://play.min.io:7373",
-		"MINIO_KMS_KES_KEY_FILE=" + "root.key",
-		"MINIO_KMS_KES_CERT_FILE=" + "root.cert",
-		"MINIO_KMS_KES_KEY_NAME=" + "my-minio-key",
-	}
-
-	f := e2e.NewInstrumentedRunnable(e, "rules-minio", ports, e2edb.AccessPortName)
-
-	return f.Init(
-		e2e.StartOptions{
-			Image: minioImage,
-			// Create the required bucket before starting minio.
-			Command: e2e.NewCommandWithoutEntrypoint("sh", "-c", fmt.Sprintf(
-				// Hacky: Create user that matches ID with host ID to be able to remove .minio.sys details on the start.
-				// Proper solution would be to contribute/create our own minio image which is non root.
-				"useradd -G root -u %v me && mkdir -p %s && chown -R me %s &&"+
-					"curl -sSL --tlsv1.2 -O 'https://raw.githubusercontent.com/minio/kes/master/root.key' -O 'https://raw.githubusercontent.com/minio/kes/master/root.cert' && "+
-					"cp root.* /home/me/ && "+
-					"su - me -s /bin/sh -c 'mkdir -p %s && %s /opt/bin/minio server --address :%v --quiet %v'",
-				userID, f.InternalDir(), f.InternalDir(), filepath.Join(f.InternalDir(), bucket), strings.Join(envVars, " "), ports[e2edb.AccessPortName], f.InternalDir()),
-			),
-			Readiness: e2e.NewHTTPReadinessProbe(e2edb.AccessPortName, "/minio/health/live", 200, 200),
-		},
-	)
-}
-
-func newRulesObjstoreService(e e2e.Environment) *e2e.InstrumentedRunnable {
+func newRulesObjstoreService(e e2e.Environment) e2e.InstrumentedRunnable {
 	ports := map[string]int{"http": 8080, "internal": 8081}
 
 	args := e2e.BuildArgs(map[string]string{
@@ -164,7 +125,7 @@ func newRulesObjstoreService(e e2e.Environment) *e2e.InstrumentedRunnable {
 		"--objstore.config-file": filepath.Join("/shared/config", "rules-objstore.yaml"),
 	})
 
-	return e2e.NewInstrumentedRunnable(e, "rules_objstore", ports, "internal").Init(
+	return e2e.NewInstrumentedRunnable(e, "rules_objstore").WithPorts(ports, "internal").Init(
 		e2e.StartOptions{
 			Image:     rulesObjectStoreImage,
 			Command:   e2e.NewCommand("", args...),
@@ -174,7 +135,7 @@ func newRulesObjstoreService(e e2e.Environment) *e2e.InstrumentedRunnable {
 	)
 }
 
-func newRuleSyncerService(e e2e.Environment, ruler string, rulesObjstore string) *e2e.InstrumentedRunnable {
+func newRuleSyncerService(e e2e.Environment, ruler string, rulesObjstore string) e2e.InstrumentedRunnable {
 	ports := map[string]int{"http": 10911}
 	args := e2e.BuildArgs(map[string]string{
 		"--file":              filepath.Join("/shared/config", "rules.yaml"),
@@ -182,7 +143,7 @@ func newRuleSyncerService(e e2e.Environment, ruler string, rulesObjstore string)
 		"--thanos-rule-url":   "http://" + ruler,
 	})
 
-	return e2e.NewInstrumentedRunnable(e, "rule_syncer", ports, "http").Init(
+	return e2e.NewInstrumentedRunnable(e, "rule_syncer").WithPorts(ports, "http").Init(
 		e2e.StartOptions{
 			Image:   thanosRuleSyncerImage,
 			Command: e2e.NewCommand("", args...),
@@ -191,7 +152,7 @@ func newRuleSyncerService(e e2e.Environment, ruler string, rulesObjstore string)
 	)
 }
 
-func newThanosRulerService(e e2e.Environment, query string) *e2e.InstrumentedRunnable {
+func newThanosRulerService(e e2e.Environment, query string) e2e.InstrumentedRunnable {
 	ports := map[string]int{
 		"http": 10904,
 		"grpc": 10903,
@@ -207,7 +168,7 @@ func newThanosRulerService(e e2e.Environment, query string) *e2e.InstrumentedRun
 		"--data-dir":     "/tmp",
 	})
 
-	return e2e.NewInstrumentedRunnable(e, "thanos-ruler", ports, "http").Init(
+	return e2e.NewInstrumentedRunnable(e, "thanos-ruler").WithPorts(ports, "http").Init(
 		e2e.StartOptions{
 			Image:     thanosImage,
 			Command:   e2e.NewCommand("rule", args...),
@@ -230,7 +191,8 @@ func startServicesForMetrics(t *testing.T, e e2e.Environment, envName string) (s
 	testutil.Ok(t, e2e.StartAndWaitReady(thanosReceive, thanosQuery, thanosRule))
 
 	bucket := "rulesobjstore"
-	minio := newMinioService(e)
+
+	minio := e2edb.NewMinio(e, "rules-minio", bucket)
 	testutil.Ok(t, e2e.StartAndWaitReady(minio))
 
 	createRulesObjstoreYAML(t, e, bucket, minio.InternalEndpoint(e2edb.AccessPortName), e2edb.MinioAccessKey, e2edb.MinioSecretKey)
@@ -279,7 +241,7 @@ func newUpRun(
 	name string,
 	readEndpoint, writeEndpoint string,
 	options ...upOption,
-) (*e2e.InstrumentedRunnable, error) {
+) (e2e.InstrumentedRunnable, error) {
 	opts := upOptions{}
 	for _, o := range options {
 		o(&opts)
@@ -321,7 +283,7 @@ func newUpRun(
 		}
 	}
 
-	return e2e.NewInstrumentedRunnable(env, name, ports, "http").Init(
+	return e2e.NewInstrumentedRunnable(env, name).WithPorts(ports, "http").Init(
 		e2e.StartOptions{
 			Image:   upImage,
 			Command: e2e.NewCommandWithoutEntrypoint("up", args...),
