@@ -226,19 +226,23 @@ func TestObsctlMetricsCommands(t *testing.T) {
 
 	})
 
-	// TODO(saswatamcode): This gives a matcher error, not sure why, fix it.
-	// t.Run("get series for a tenant", func(t *testing.T) {
-	// 	b := bytes.NewBufferString("")
+	t.Run("get series for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
 
-	// 	contextCmd := cmd.NewObsctlCmd(context.TODO(), filepath.Join(e.SharedDir(), "obsctl", "config.json"))
+		contextCmd := cmd.NewObsctlCmd(context.TODO(), filepath.Join(e.SharedDir(), "obsctl", "config.json"))
 
-	// 	contextCmd.SetOut(b)
-	// 	contextCmd.SetArgs([]string{"metrics", "get", "series"})
-	// 	testutil.Ok(t, contextCmd.Execute())
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"metrics", "get", "series", "--match", "observatorium_write"})
+		testutil.Ok(t, contextCmd.Execute())
 
-	// 	got, err := ioutil.ReadAll(b)
-	// 	testutil.Ok(t, err)
+		got, err := ioutil.ReadAll(b)
+		testutil.Ok(t, err)
 
-	// 	testutil.Equals(t, exp, string(got))
-	// })
+		// Using assertResponse here as we cannot know exact tenant_id.
+		// As this is response from Query /api/v1/series, it should contain label of series written by up.
+		assertResponse(t, string(got), "observatorium_write")
+		assertResponse(t, string(got), "tenant_id")
+		assertResponse(t, string(got), "test")
+		assertResponse(t, string(got), "obsctl")
+	})
 }

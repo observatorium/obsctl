@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 
 	"github.com/go-kit/log/level"
@@ -19,12 +20,24 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 		Long:  "Read series, labels & rules (JSON/YAML) of a tenant.",
 	}
 
+	var seriesMatchers []string
 	seriesCmd := &cobra.Command{
 		Use:   "series",
 		Short: "Get series of a tenant.",
 		Long:  "Get series of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/series", path...)
+			u := "/api/v1/series"
+			params := url.Values{}
+
+			for _, s := range seriesMatchers {
+				params.Add("match[]", s)
+			}
+
+			if len(params.Encode()) != 0 {
+				u = u + "?" + params.Encode()
+			}
+
+			b, err := config.DoMetricsGetReq(ctx, logger, u, path...)
 			if err != nil {
 				return err
 			}
@@ -33,6 +46,11 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 
 			return prettyPrintJSON(b, cmd.OutOrStdout())
 		},
+	}
+	seriesCmd.Flags().StringArrayVarP(&seriesMatchers, "match", "m", nil, "Repeated series selector argument that selects the series to return.")
+	err := seriesCmd.MarkFlagRequired("match")
+	if err != nil {
+		panic(err)
 	}
 
 	labelsCmd := &cobra.Command{
@@ -64,7 +82,7 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 		},
 	}
 	labelValuesCmd.Flags().StringVar(&labelName, "name", "", "Name of the label to fetch values for.")
-	err := labelValuesCmd.MarkFlagRequired("name")
+	err = labelValuesCmd.MarkFlagRequired("name")
 	if err != nil {
 		panic(err)
 	}
