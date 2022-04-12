@@ -42,8 +42,6 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), "this should work")
-
 			return prettyPrintJSON(b, cmd.OutOrStdout())
 		},
 	}
