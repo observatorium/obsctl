@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/observatorium/api/client"
+	"github.com/observatorium/api/client/parameters"
 	"github.com/observatorium/obsctl/pkg/fetcher"
 	"github.com/spf13/cobra"
 )
@@ -32,13 +33,13 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 
 			params := &client.GetSeriesParams{}
 			if len(seriesMatchers) > 0 {
-				params.Match = (*client.SeriesMatcher)(&seriesMatchers)
+				params.Match = (parameters.SeriesMatcher)(seriesMatchers)
 			}
 			if seriesStart != "" {
-				params.Start = (*client.StartTS)(&seriesStart)
+				params.Start = (*parameters.StartTS)(&seriesStart)
 			}
 			if seriesEnd != "" {
-				params.End = (*client.EndTS)(&seriesEnd)
+				params.End = (*parameters.EndTS)(&seriesEnd)
 			}
 
 			resp, err := f.GetSeriesWithResponse(ctx, currentTenant, params)
@@ -68,13 +69,13 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 
 			params := &client.GetLabelsParams{}
 			if len(labelMatchers) > 0 {
-				params.Match = (*client.SeriesMatcher)(&labelMatchers)
+				params.Match = (parameters.SeriesMatcher)(labelMatchers)
 			}
 			if labelStart != "" {
-				params.Start = (*client.StartTS)(&labelStart)
+				params.Start = (*parameters.StartTS)(&labelStart)
 			}
 			if labelEnd != "" {
-				params.End = (*client.EndTS)(&labelEnd)
+				params.End = (*parameters.EndTS)(&labelEnd)
 			}
 
 			resp, err := f.GetLabelsWithResponse(ctx, currentTenant, params)
@@ -104,13 +105,13 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 
 			params := &client.GetLabelValuesParams{}
 			if len(labelValuesMatchers) > 0 {
-				params.Match = (*client.SeriesMatcher)(&labelValuesMatchers)
+				params.Match = (parameters.SeriesMatcher)(labelValuesMatchers)
 			}
 			if labelValuesStart != "" {
-				params.Start = (*client.StartTS)(&labelValuesStart)
+				params.Start = (*parameters.StartTS)(&labelValuesStart)
 			}
 			if labelValuesEnd != "" {
-				params.End = (*client.EndTS)(&labelValuesEnd)
+				params.End = (*parameters.EndTS)(&labelValuesEnd)
 			}
 
 			resp, err := f.GetLabelValuesWithResponse(ctx, currentTenant, labelName, params)
@@ -252,20 +253,20 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			query := client.Query(args[0])
+			query := parameters.Query(args[0])
 
 			if isRange {
 				params := &client.GetRangeQueryParams{Query: &query}
 				if timeout != "" {
-					params.Timeout = (*client.QueryTimeout)(&timeout)
+					params.Timeout = (*parameters.QueryTimeout)(&timeout)
 				}
 
 				if start == "" || end == "" {
 					return fmt.Errorf("start/end timestamp not provided for range query")
 				}
 
-				params.Start = (*client.StartTS)(&start)
-				params.End = (*client.EndTS)(&end)
+				params.Start = (*parameters.StartTS)(&start)
+				params.End = (*parameters.EndTS)(&end)
 
 				if step != "" {
 					params.Step = &step
@@ -283,7 +284,7 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 					params.Time = &evalTime
 				}
 				if timeout != "" {
-					params.Timeout = (*client.QueryTimeout)(&timeout)
+					params.Timeout = (*parameters.QueryTimeout)(&timeout)
 				}
 
 				resp, err := f.GetInstantQueryWithResponse(ctx, currentTenant, params)
