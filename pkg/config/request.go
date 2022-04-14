@@ -39,6 +39,10 @@ func DoMetricsGetReq(ctx context.Context, logger log.Logger, endpoint string) ([
 		return nil, fmt.Errorf("reading response body: %w", err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%s response: %q", resp.Status, b)
+	}
+
 	return b, nil
 }
 
