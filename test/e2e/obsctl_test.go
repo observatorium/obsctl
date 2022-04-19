@@ -158,15 +158,12 @@ func TestObsctlMetricsCommands(t *testing.T) {
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "rules.raw"})
-		testutil.Ok(t, contextCmd.Execute())
+		testutil.NotOk(t, contextCmd.Execute())
 
 		got, err := ioutil.ReadAll(b)
 		testutil.Ok(t, err)
 
-		exp := `no rules found
-
-`
-		testutil.Equals(t, exp, string(got))
+		assertResponse(t, string(got), "no rules found")
 	})
 
 	t.Run("set rules for a tenant", func(t *testing.T) {

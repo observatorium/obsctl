@@ -39,6 +39,12 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 
 			b, err := config.DoMetricsGetReq(ctx, logger, u, path...)
 			if err != nil {
+				if len(b) != 0 {
+					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("%v error pretty printing: %v", perr, err)
+					}
+					return err
+				}
 				return err
 			}
 
@@ -58,6 +64,12 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/labels", path...)
 			if err != nil {
+				if len(b) != 0 {
+					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("%v error pretty printing: %v", perr, err)
+					}
+					return err
+				}
 				return err
 			}
 
@@ -73,6 +85,12 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/label/"+labelName+"/values", path...)
 			if err != nil {
+				if len(b) != 0 {
+					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("%v error pretty printing: %v", perr, err)
+					}
+					return err
+				}
 				return err
 			}
 
@@ -92,6 +110,12 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules", path...)
 			if err != nil {
+				if len(b) != 0 {
+					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("%v error pretty printing: %v", perr, err)
+					}
+					return err
+				}
 				return err
 			}
 
@@ -106,6 +130,10 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules/raw", path...)
 			if err != nil {
+				if len(b) != 0 {
+					fmt.Fprintln(cmd.OutOrStdout(), string(b))
+					return err
+				}
 				return err
 			}
 
@@ -145,6 +173,10 @@ func NewMetricsSetCmd(ctx context.Context, path ...string) *cobra.Command {
 
 			b, err := config.DoMetricsPutReqWithYAML(ctx, logger, "/api/v1/rules/raw", data, path...)
 			if err != nil {
+				if len(b) != 0 {
+					fmt.Fprintln(cmd.OutOrStdout(), string(b))
+					return err
+				}
 				return err
 			}
 
