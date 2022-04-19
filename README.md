@@ -188,3 +188,9 @@ Global Flags:
       --log.format string   Log format to use. (default "clilog")
       --log.level string    Log filtering level. (default "info")
 ```
+
+## Future additons in obsctl
+- [ ] Add support for logging operations
+- [ ] Add support for tracing operations
+- [ ] Add support for PromQL query execution
+- [ ] Add support for alerting configuration based on [proposal](https://github.com/observatorium/observatorium/pull/453)
