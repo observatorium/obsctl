@@ -9,7 +9,7 @@ require (
 	github.com/efficientgo/tools/core v0.0.0-20210731122119-5d4a0645ce9a
 	github.com/go-kit/log v0.2.0
 	github.com/google/uuid v1.2.0
-	github.com/observatorium/api v0.1.3-0.20220413090223-07464d9fed5f
+	github.com/observatorium/api v0.1.3-0.20220419075223-a158e7fdc72f
 	github.com/oklog/run v1.1.0
 	github.com/spf13/cobra v1.4.0
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
@@ -31,6 +31,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.uber.org/goleak v1.1.12 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
+	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect

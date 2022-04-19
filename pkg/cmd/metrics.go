@@ -53,6 +53,10 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	seriesCmd.Flags().StringArrayVarP(&seriesMatchers, "match", "m", nil, "Repeated series selector argument that selects the series to return.")
 	seriesCmd.Flags().StringVarP(&seriesStart, "start", "s", "", "Start timestamp.")
 	seriesCmd.Flags().StringVarP(&seriesEnd, "end", "e", "", "End timestamp.")
+	err := seriesCmd.MarkFlagRequired("match")
+	if err != nil {
+		panic(err)
+	}
 
 	// Labels command.
 	var labelMatchers []string
@@ -69,7 +73,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 
 			params := &client.GetLabelsParams{}
 			if len(labelMatchers) > 0 {
-				params.Match = (parameters.SeriesMatcher)(labelMatchers)
+				params.Match = (*parameters.OptionalSeriesMatcher)(&labelMatchers)
 			}
 			if labelStart != "" {
 				params.Start = (*parameters.StartTS)(&labelStart)
@@ -105,7 +109,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 
 			params := &client.GetLabelValuesParams{}
 			if len(labelValuesMatchers) > 0 {
-				params.Match = (parameters.SeriesMatcher)(labelValuesMatchers)
+				params.Match = (*parameters.OptionalSeriesMatcher)(&labelValuesMatchers)
 			}
 			if labelValuesStart != "" {
 				params.Start = (*parameters.StartTS)(&labelValuesStart)
@@ -127,7 +131,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	labelValuesCmd.Flags().StringVarP(&labelValuesStart, "start", "s", "", "Start timestamp.")
 	labelValuesCmd.Flags().StringVarP(&labelValuesEnd, "end", "e", "", "End timestamp.")
 
-	err := labelValuesCmd.MarkFlagRequired("name")
+	err = labelValuesCmd.MarkFlagRequired("name")
 	if err != nil {
 		panic(err)
 	}
