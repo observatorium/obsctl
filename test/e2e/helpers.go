@@ -30,7 +30,7 @@ func registerHydraUsers(t *testing.T, noOfTenants int) {
 }
 
 func obtainToken(t *testing.T, issuerURL string, current int) string {
-	provider, err := oidc.NewProvider(context.TODO(), "http://"+issuerURL+"/")
+	provider, err := oidc.NewProvider(context.Background(), "http://"+issuerURL+"/")
 	testutil.Ok(t, err)
 
 	ccc := clientcredentials.Config{
@@ -44,7 +44,7 @@ func obtainToken(t *testing.T, issuerURL string, current int) string {
 		"audience": []string{"observatorium-" + fmt.Sprint(current)},
 	}
 
-	ts := ccc.TokenSource(context.TODO())
+	ts := ccc.TokenSource(context.Background())
 
 	tkn, err := ts.Token()
 	testutil.Ok(t, err)
