@@ -14,8 +14,8 @@ import (
 
 // TODO(saswatamcode): Replace this with OpenAPI based/dedicated fetcher.
 // DoMetricsGetReq makes a GET request to specified endpoint.
-func DoMetricsGetReq(ctx context.Context, logger log.Logger, endpoint string, p ...string) ([]byte, error) {
-	config, err := Read(logger, p...)
+func DoMetricsGetReq(ctx context.Context, logger log.Logger, endpoint string) ([]byte, error) {
+	config, err := Read(logger)
 	if err != nil {
 		return nil, fmt.Errorf("getting reading config: %w", err)
 	}
@@ -47,8 +47,8 @@ func DoMetricsGetReq(ctx context.Context, logger log.Logger, endpoint string, p 
 }
 
 // DoMetricsPutReqWithYAML makes a PUT request to specified endpoint with a YAML body.
-func DoMetricsPutReqWithYAML(ctx context.Context, logger log.Logger, endpoint string, body []byte, p ...string) ([]byte, error) {
-	config, err := Read(logger, p...)
+func DoMetricsPutReqWithYAML(ctx context.Context, logger log.Logger, endpoint string, body []byte) ([]byte, error) {
+	config, err := Read(logger)
 	if err != nil {
 		return nil, fmt.Errorf("getting reading config: %w", err)
 	}

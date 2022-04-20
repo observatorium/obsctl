@@ -13,7 +13,7 @@ import (
 )
 
 // TODO(saswatamcode): Add flags for URL query params.
-func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
+func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
 		Short: "Read series, labels & rules (JSON/YAML) of a tenant.",
@@ -37,7 +37,7 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 				u = u + "?" + params.Encode()
 			}
 
-			b, err := config.DoMetricsGetReq(ctx, logger, u, path...)
+			b, err := config.DoMetricsGetReq(ctx, logger, u)
 			if err != nil {
 				if len(b) != 0 {
 					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
@@ -62,7 +62,7 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 		Short: "Get labels of a tenant.",
 		Long:  "Get labels of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/labels", path...)
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/labels")
 			if err != nil {
 				if len(b) != 0 {
 					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
@@ -83,7 +83,7 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 		Short: "Get label values of a tenant.",
 		Long:  "Get label values of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/label/"+labelName+"/values", path...)
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/label/"+labelName+"/values")
 			if err != nil {
 				if len(b) != 0 {
 					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
@@ -108,7 +108,7 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 		Short: "Get rules of a tenant.",
 		Long:  "Get rules of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules", path...)
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules")
 			if err != nil {
 				if len(b) != 0 {
 					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
@@ -128,7 +128,7 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 		Short: "Get configured rules of a tenant.",
 		Long:  "Get configured rules of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules/raw", path...)
+			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules/raw")
 			if err != nil {
 				if len(b) != 0 {
 					fmt.Fprintln(cmd.OutOrStdout(), string(b))
@@ -151,7 +151,7 @@ func NewMetricsGetCmd(ctx context.Context, path ...string) *cobra.Command {
 	return cmd
 }
 
-func NewMetricsSetCmd(ctx context.Context, path ...string) *cobra.Command {
+func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 	var ruleFilePath string
 	cmd := &cobra.Command{
 		Use:   "set",
@@ -171,7 +171,7 @@ func NewMetricsSetCmd(ctx context.Context, path ...string) *cobra.Command {
 
 			fmt.Fprintln(cmd.OutOrStdout(), string(data))
 
-			b, err := config.DoMetricsPutReqWithYAML(ctx, logger, "/api/v1/rules/raw", data, path...)
+			b, err := config.DoMetricsPutReqWithYAML(ctx, logger, "/api/v1/rules/raw", data)
 			if err != nil {
 				if len(b) != 0 {
 					fmt.Fprintln(cmd.OutOrStdout(), string(b))
@@ -205,16 +205,16 @@ func NewMetricsQueryCmd(ctx context.Context, path ...string) *cobra.Command {
 	return cmd
 }
 
-func NewMetricsCmd(ctx context.Context, path ...string) *cobra.Command {
+func NewMetricsCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "metrics",
 		Short: "Metrics based operations for Observatorium.",
 		Long:  "Metrics based operations for Observatorium.",
 	}
 
-	cmd.AddCommand(NewMetricsGetCmd(ctx, path...))
-	cmd.AddCommand(NewMetricsSetCmd(ctx, path...))
-	cmd.AddCommand(NewMetricsQueryCmd(ctx, path...))
+	cmd.AddCommand(NewMetricsGetCmd(ctx))
+	cmd.AddCommand(NewMetricsSetCmd(ctx))
+	cmd.AddCommand(NewMetricsQueryCmd(ctx))
 
 	return cmd
 }

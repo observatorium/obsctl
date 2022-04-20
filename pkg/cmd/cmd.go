@@ -50,7 +50,7 @@ func setupLogger(*cobra.Command, []string) {
 	}
 }
 
-func NewObsctlCmd(ctx context.Context, path ...string) *cobra.Command {
+func NewObsctlCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "obsctl",
 		Short:            "CLI to interact with Observatorium",
@@ -59,8 +59,8 @@ func NewObsctlCmd(ctx context.Context, path ...string) *cobra.Command {
 		PersistentPreRun: setupLogger,
 	}
 
-	cmd.AddCommand(NewMetricsCmd(ctx, path...))
-	cmd.AddCommand(NewContextCommand(ctx, path...))
+	cmd.AddCommand(NewMetricsCmd(ctx))
+	cmd.AddCommand(NewContextCommand(ctx))
 	cmd.AddCommand(NewLoginCmd(ctx))
 	cmd.AddCommand(NewLogoutCmd(ctx))
 

@@ -75,11 +75,12 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 
 func TestObsctlMetricsCommands(t *testing.T) {
 	e := preTest(t)
+	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(e.SharedDir(), "obsctl", "config.json")))
 
 	t.Run("get labels for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background(), filepath.Join(e.SharedDir(), "obsctl", "config.json"))
+		contextCmd := cmd.NewObsctlCmd(context.Background())
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "labels"})
@@ -106,7 +107,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get labelvalues for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background(), filepath.Join(e.SharedDir(), "obsctl", "config.json"))
+		contextCmd := cmd.NewObsctlCmd(context.Background())
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "labelvalues", "--name=test"})
@@ -130,7 +131,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get rules for a tenant (none configured)", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background(), filepath.Join(e.SharedDir(), "obsctl", "config.json"))
+		contextCmd := cmd.NewObsctlCmd(context.Background())
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "rules"})
@@ -154,7 +155,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get raw rules for a tenant (none configured)", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background(), filepath.Join(e.SharedDir(), "obsctl", "config.json"))
+		contextCmd := cmd.NewObsctlCmd(context.Background())
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "rules.raw"})
@@ -169,7 +170,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("set rules for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background(), filepath.Join(e.SharedDir(), "obsctl", "config.json"))
+		contextCmd := cmd.NewObsctlCmd(context.Background())
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "set", "--rule.file=" + filepath.Join(e.SharedDir(), "obsctl", "rules.yaml")})
@@ -186,7 +187,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get rules.raw for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background(), filepath.Join(e.SharedDir(), "obsctl", "config.json"))
+		contextCmd := cmd.NewObsctlCmd(context.Background())
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "rules.raw"})
@@ -203,7 +204,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get rules for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background(), filepath.Join(e.SharedDir(), "obsctl", "config.json"))
+		contextCmd := cmd.NewObsctlCmd(context.Background())
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "rules"})
@@ -226,7 +227,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get series for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background(), filepath.Join(e.SharedDir(), "obsctl", "config.json"))
+		contextCmd := cmd.NewObsctlCmd(context.Background())
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "series", "--match", "observatorium_write"})

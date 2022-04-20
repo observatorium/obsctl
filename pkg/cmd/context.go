@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewContextCommand(ctx context.Context, path ...string) *cobra.Command {
+func NewContextCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "context",
 		Short: "Manage context configuration.",
@@ -29,7 +29,7 @@ func NewContextCommand(ctx context.Context, path ...string) *cobra.Command {
 		Short: "Add API configuration.",
 		Long:  "Add API configuration.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := config.Read(logger, path...)
+			conf, err := config.Read(logger)
 			if err != nil {
 				return err
 			}
