@@ -47,7 +47,16 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("getting response: %w", err)
 			}
 
-			return prettyPrintJSON(resp.Body)
+			if resp.StatusCode()/100 != 2 {
+				if len(resp.Body) != 0 {
+					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+					}
+					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+				}
+			}
+
+			return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
 		},
 	}
 	seriesCmd.Flags().StringArrayVarP(&seriesMatchers, "match", "m", nil, "Repeated series selector argument that selects the series to return.")
@@ -87,7 +96,16 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("getting response: %w", err)
 			}
 
-			return prettyPrintJSON(resp.Body)
+			if resp.StatusCode()/100 != 2 {
+				if len(resp.Body) != 0 {
+					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+					}
+					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+				}
+			}
+
+			return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
 		},
 	}
 	labelsCmd.Flags().StringArrayVarP(&labelMatchers, "match", "m", []string{}, "Repeated series selector argument that selects the series from which to read the label names.")
@@ -123,7 +141,16 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("getting response: %w", err)
 			}
 
-			return prettyPrintJSON(resp.Body)
+			if resp.StatusCode()/100 != 2 {
+				if len(resp.Body) != 0 {
+					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+					}
+					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+				}
+			}
+
+			return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
 		},
 	}
 	labelValuesCmd.Flags().StringVar(&labelName, "name", "", "Name of the label to fetch values for.")
@@ -165,7 +192,16 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("getting response: %w", err)
 			}
 
-			return prettyPrintJSON(resp.Body)
+			if resp.StatusCode()/100 != 2 {
+				if len(resp.Body) != 0 {
+					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+					}
+					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+				}
+			}
+
+			return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
 		},
 	}
 	rulesCmd.Flags().StringArrayVarP(&ruleMatchers, "match", "m", []string{}, "Repeated series selector argument that selects the series from which to read the label values.")
@@ -187,7 +223,14 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("getting response: %w", err)
 			}
 
-			fmt.Fprintln(os.Stdout, string(resp.Body))
+			if resp.StatusCode()/100 != 2 {
+				if len(resp.Body) != 0 {
+					fmt.Fprintln(cmd.OutOrStdout(), string(resp.Body))
+					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+				}
+			}
+
+			fmt.Fprintln(cmd.OutOrStdout(), string(resp.Body))
 			return nil
 		},
 	}
@@ -224,7 +267,14 @@ func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("getting response: %w", err)
 			}
 
-			fmt.Fprintln(os.Stdout, string(resp.Body))
+			if resp.StatusCode()/100 != 2 {
+				if len(resp.Body) != 0 {
+					fmt.Fprintln(cmd.OutOrStdout(), string(resp.Body))
+					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+				}
+			}
+
+			fmt.Fprintln(cmd.OutOrStdout(), string(resp.Body))
 			return nil
 		},
 	}
@@ -281,7 +331,16 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 					return fmt.Errorf("getting response: %w", err)
 				}
 
-				return prettyPrintJSON(resp.Body)
+				if resp.StatusCode()/100 != 2 {
+					if len(resp.Body) != 0 {
+						if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
+							return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+						}
+						return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+					}
+				}
+
+				return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
 			} else {
 				params := &client.GetInstantQueryParams{Query: &query}
 				if evalTime != "" {
@@ -296,7 +355,16 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 					return fmt.Errorf("getting response: %w", err)
 				}
 
-				return prettyPrintJSON(resp.Body)
+				if resp.StatusCode()/100 != 2 {
+					if len(resp.Body) != 0 {
+						if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
+							return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+						}
+						return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+					}
+				}
+
+				return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
 			}
 		},
 	}

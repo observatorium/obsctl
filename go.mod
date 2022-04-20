@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/bwplotka/mdox v0.9.0
 	github.com/coreos/go-oidc/v3 v3.1.0
-	github.com/efficientgo/e2e v0.11.1
+	github.com/efficientgo/e2e v0.12.0
 	github.com/efficientgo/tools/core v0.0.0-20210731122119-5d4a0645ce9a
 	github.com/go-kit/log v0.2.0
 	github.com/google/uuid v1.2.0

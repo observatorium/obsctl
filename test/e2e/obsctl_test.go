@@ -179,7 +179,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		got, err := ioutil.ReadAll(b)
 		testutil.Ok(t, err)
 
-		exp := "groups:\n- interval: 30s\n  name: test-firing-alert\n  rules:\n  - alert: TestFiringAlert\n    annotations:\n      description: Test firing alert\n      message: Message of firing alert here\n      summary: Summary of firing alert here\n    expr: vector(1)\n    for: 1m\n    labels:\n      severity: page\n\nsuccessfully updated rules file\n"
+		exp := "successfully updated rules file\n"
 
 		testutil.Equals(t, exp, string(got))
 	})
