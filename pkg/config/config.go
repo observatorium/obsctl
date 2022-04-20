@@ -23,13 +23,15 @@ import (
 const (
 	configFileName = "config.json"
 	configDirName  = "obsctl"
+	envVar         = "OBSCTL_CONFIG_PATH"
 )
 
-// getConfigFilePath returns the obsctl config file path or the first string in override argument.
+// getConfigFilePath returns the obsctl config file path or the value of env variable.
 // Useful for testing.
-func getConfigFilePath(override ...string) string {
+func getConfigFilePath() string {
+	override := os.Getenv(envVar)
 	if len(override) != 0 {
-		return override[0]
+		return override
 	}
 
 	usrConfigDir, err := os.UserConfigDir()
@@ -50,7 +52,7 @@ func ensureConfigDir() error {
 
 // Config represents the structure of the configuration file.
 type Config struct {
-	pathOverride []string
+	pathOverride string
 
 	APIs    map[string]APIConfig `json:"apis"`
 	Current struct {
@@ -151,18 +153,18 @@ func (c *Config) Client(ctx context.Context, logger log.Logger) (*http.Client, e
 }
 
 // Read loads configuration from disk.
-func Read(logger log.Logger, path ...string) (*Config, error) {
+func Read(logger log.Logger) (*Config, error) {
 	if err := ensureConfigDir(); err != nil {
 		return nil, err
 	}
 
-	file, err := os.OpenFile(getConfigFilePath(path...), os.O_RDONLY|os.O_CREATE, 0600)
+	file, err := os.OpenFile(getConfigFilePath(), os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return nil, fmt.Errorf("opening config file: %w", err)
 	}
 	defer file.Close()
 
-	cfg := Config{pathOverride: path}
+	cfg := Config{pathOverride: getConfigFilePath()}
 
 	if err := json.NewDecoder(file).Decode(&cfg); err != nil && err != io.EOF {
 		return nil, fmt.Errorf("parsing config file: %w", err)
@@ -179,7 +181,7 @@ func (c *Config) Save(logger log.Logger) error {
 		return err
 	}
 
-	file, err := os.OpenFile(getConfigFilePath(c.pathOverride...), os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0600)
+	file, err := os.OpenFile(getConfigFilePath(), os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0600)
 	if err != nil {
 		return fmt.Errorf("opening config file: %w", err)
 	}

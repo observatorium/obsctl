@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 
 	"github.com/go-kit/log/level"
@@ -19,18 +20,41 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Long:  "Read series, labels & rules (JSON/YAML) of a tenant.",
 	}
 
+	var seriesMatchers []string
 	seriesCmd := &cobra.Command{
 		Use:   "series",
 		Short: "Get series of a tenant.",
 		Long:  "Get series of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/series")
+			u := "/api/v1/series"
+			params := url.Values{}
+
+			for _, s := range seriesMatchers {
+				params.Add("match[]", s)
+			}
+
+			if len(params.Encode()) != 0 {
+				u = u + "?" + params.Encode()
+			}
+
+			b, err := config.DoMetricsGetReq(ctx, logger, u)
 			if err != nil {
+				if len(b) != 0 {
+					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("%v error pretty printing: %v", perr, err)
+					}
+					return err
+				}
 				return err
 			}
 
-			return prettyPrintJSON(b)
+			return prettyPrintJSON(b, cmd.OutOrStdout())
 		},
+	}
+	seriesCmd.Flags().StringArrayVarP(&seriesMatchers, "match", "m", nil, "Repeated series selector argument that selects the series to return.")
+	err := seriesCmd.MarkFlagRequired("match")
+	if err != nil {
+		panic(err)
 	}
 
 	labelsCmd := &cobra.Command{
@@ -40,10 +64,16 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/labels")
 			if err != nil {
+				if len(b) != 0 {
+					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("%v error pretty printing: %v", perr, err)
+					}
+					return err
+				}
 				return err
 			}
 
-			return prettyPrintJSON(b)
+			return prettyPrintJSON(b, cmd.OutOrStdout())
 		},
 	}
 
@@ -55,14 +85,20 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/label/"+labelName+"/values")
 			if err != nil {
+				if len(b) != 0 {
+					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("%v error pretty printing: %v", perr, err)
+					}
+					return err
+				}
 				return err
 			}
 
-			return prettyPrintJSON(b)
+			return prettyPrintJSON(b, cmd.OutOrStdout())
 		},
 	}
 	labelValuesCmd.Flags().StringVar(&labelName, "name", "", "Name of the label to fetch values for.")
-	err := labelValuesCmd.MarkFlagRequired("name")
+	err = labelValuesCmd.MarkFlagRequired("name")
 	if err != nil {
 		panic(err)
 	}
@@ -74,10 +110,16 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules")
 			if err != nil {
+				if len(b) != 0 {
+					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("%v error pretty printing: %v", perr, err)
+					}
+					return err
+				}
 				return err
 			}
 
-			return prettyPrintJSON(b)
+			return prettyPrintJSON(b, cmd.OutOrStdout())
 		},
 	}
 
@@ -88,10 +130,14 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules/raw")
 			if err != nil {
+				if len(b) != 0 {
+					fmt.Fprintln(cmd.OutOrStdout(), string(b))
+					return err
+				}
 				return err
 			}
 
-			fmt.Fprintln(os.Stdout, string(b))
+			fmt.Fprintln(cmd.OutOrStdout(), string(b))
 			return nil
 		},
 	}
@@ -123,14 +169,18 @@ func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("reading rule file: %w", err)
 			}
 
-			fmt.Fprintln(os.Stdout, string(data))
+			fmt.Fprintln(cmd.OutOrStdout(), string(data))
 
 			b, err := config.DoMetricsPutReqWithYAML(ctx, logger, "/api/v1/rules/raw", data)
 			if err != nil {
+				if len(b) != 0 {
+					fmt.Fprintln(cmd.OutOrStdout(), string(b))
+					return err
+				}
 				return err
 			}
 
-			fmt.Fprintln(os.Stdout, string(b))
+			fmt.Fprintln(cmd.OutOrStdout(), string(b))
 			return nil
 		},
 	}
@@ -140,7 +190,7 @@ func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
+func NewMetricsQueryCmd(ctx context.Context, path ...string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "query",
 		Short:   "Query metrics for a tenant.",

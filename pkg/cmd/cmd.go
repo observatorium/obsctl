@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/bwplotka/mdox/pkg/clilog"
@@ -70,7 +71,7 @@ func NewObsctlCmd(ctx context.Context) *cobra.Command {
 }
 
 // prettyPrintJSON prints indented JSON to stdout.
-func prettyPrintJSON(b []byte) error {
+func prettyPrintJSON(b []byte, w io.Writer) error {
 	var out bytes.Buffer
 	err := json.Indent(&out, b, "", "\t")
 	if err != nil {
@@ -78,7 +79,7 @@ func prettyPrintJSON(b []byte) error {
 		return fmt.Errorf("indent JSON %w", err)
 	}
 
-	fmt.Fprintln(os.Stdout, out.String())
+	fmt.Fprintln(w, out.String())
 
 	return nil
 }

@@ -99,7 +99,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 			}
 
 			// TODO(saswatamcode): Add flag to display more details. Eg -verbose
-			fmt.Fprintf(os.Stdout, "The current context is: %s/%s\n", conf.Current.API, conf.Current.Tenant)
+			fmt.Fprintf(cmd.OutOrStdout(), "The current context is: %s/%s\n", conf.Current.API, conf.Current.Tenant)
 			return nil
 		},
 	}
@@ -117,11 +117,11 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 			for k, v := range conf.APIs {
 				fmt.Fprintf(os.Stdout, "%s\n", string(k))
 				if len(v.Contexts) == 0 {
-					fmt.Fprint(os.Stdout, "\t- no tenants yet, currently not usable\n")
+					fmt.Fprint(cmd.OutOrStdout(), "\t- no tenants yet, currently not usable\n")
 				}
 
 				for kc := range v.Contexts {
-					fmt.Fprintf(os.Stdout, "\t- %s\n", string(kc))
+					fmt.Fprintf(cmd.OutOrStdout(), "\t- %s\n", string(kc))
 				}
 			}
 
@@ -131,7 +131,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 			}
 
 			// TODO(saswatamcode): Add flag to display more details. Eg -verbose
-			fmt.Fprintf(os.Stdout, "\nThe current context is: %s/%s\n", conf.Current.API, conf.Current.Tenant)
+			fmt.Fprintf(cmd.OutOrStdout(), "\nThe current context is: %s/%s\n", conf.Current.API, conf.Current.Tenant)
 			return nil
 		},
 	}

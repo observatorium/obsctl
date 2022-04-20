@@ -39,8 +39,8 @@ func DoMetricsGetReq(ctx context.Context, logger log.Logger, endpoint string) ([
 		return nil, fmt.Errorf("reading response body: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%s response: %q", resp.Status, b)
+	if resp.StatusCode/100 != 2 {
+		return b, fmt.Errorf("request to %s failed with statuscode %d", endpoint, resp.StatusCode)
 	}
 
 	return b, nil
@@ -77,6 +77,10 @@ func DoMetricsPutReqWithYAML(ctx context.Context, logger log.Logger, endpoint st
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	if resp.StatusCode/100 != 2 {
+		return b, fmt.Errorf("request to %s failed with statuscode %d", endpoint, resp.StatusCode)
 	}
 
 	return b, nil

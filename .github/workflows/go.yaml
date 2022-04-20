@@ -36,7 +36,7 @@ jobs:
         go: [ '1.17.x']
         platform: [ubuntu-latest]
 
-    name: Unit tests on Go ${{ matrix.go }} ${{ matrix.platform }}
+    name: Tests on Go ${{ matrix.go }} ${{ matrix.platform }}
     steps:
       - name: Checkout code into the Go module directory.
         uses: actions/checkout@v2
@@ -56,3 +56,9 @@ jobs:
           GOBIN: /tmp/.bin
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: make test
+
+      - name: Run e2e tests.
+        env:
+          GOBIN: /tmp/.bin
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: make test-e2e

@@ -76,7 +76,7 @@ export GOCACHE=/tmp/cache
 test:
 	@echo ">> running unit tests (without cache)"
 	@rm -rf $(GOCACHE)
-	@go test -v -timeout=30m $(shell go list ./... | grep -v /vendor/);
+	@go test -v -timeout=30m $(shell go list ./... | grep -v e2e);
 
 .PHONY: check-git
 check-git:
@@ -102,3 +102,11 @@ lint: $(FAILLINT) $(GOLANGCI_LINT) $(MISSPELL) build format docs check-git deps
 	@$(GOLANGCI_LINT) run
 	@echo ">> detecting misspells"
 	@find . -type f | grep -v vendor/ | grep -vE '\./\..*' | xargs $(MISSPELL) -error
+
+.PHONY: test-e2e
+test-e2e:
+	@rm -rf ./test/e2e/e2e_*
+	@rm -rf ./test/e2e/tmp
+	@./test/e2e/start_hydra.sh
+	@go test -v -timeout 99m github.com/observatorium/obsctl/test/e2e
+	@kill -9 `pidof hydra`
