@@ -58,3 +58,11 @@ func assertResponse(t *testing.T, response string, expected string) {
 		fmt.Sprintf("failed to assert that the response '%s' contains '%s'", response, expected),
 	)
 }
+
+func notAssertResponse(t *testing.T, response string, expected string) {
+	testutil.Assert(
+		t,
+		!strings.Contains(response, expected),
+		fmt.Sprintf("failed to assert that the response '%s' contains '%s'", response, expected),
+	)
+}

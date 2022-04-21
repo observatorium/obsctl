@@ -3,16 +3,14 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"net/url"
 	"os"
 
-	"github.com/go-kit/log/level"
-	"github.com/observatorium/obsctl/pkg/config"
+	"github.com/observatorium/api/client"
+	"github.com/observatorium/api/client/parameters"
+	"github.com/observatorium/obsctl/pkg/fetcher"
 	"github.com/spf13/cobra"
 )
 
-// TODO(saswatamcode): Add flags for URL query params.
 func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
@@ -20,124 +18,227 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		Long:  "Read series, labels & rules (JSON/YAML) of a tenant.",
 	}
 
-	var seriesMatchers []string
+	// Series command.
+	var (
+		seriesMatchers         []string
+		seriesStart, seriesEnd string
+	)
 	seriesCmd := &cobra.Command{
 		Use:   "series",
 		Short: "Get series of a tenant.",
 		Long:  "Get series of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			u := "/api/v1/series"
-			params := url.Values{}
-
-			for _, s := range seriesMatchers {
-				params.Add("match[]", s)
-			}
-
-			if len(params.Encode()) != 0 {
-				u = u + "?" + params.Encode()
-			}
-
-			b, err := config.DoMetricsGetReq(ctx, logger, u)
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
-				if len(b) != 0 {
-					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("%v error pretty printing: %v", perr, err)
-					}
-					return err
-				}
-				return err
+				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			return prettyPrintJSON(b, cmd.OutOrStdout())
+			params := &client.GetSeriesParams{}
+			if len(seriesMatchers) > 0 {
+				params.Match = seriesMatchers
+			}
+			if seriesStart != "" {
+				params.Start = (*parameters.StartTS)(&seriesStart)
+			}
+			if seriesEnd != "" {
+				params.End = (*parameters.EndTS)(&seriesEnd)
+			}
+
+			resp, err := f.GetSeriesWithResponse(ctx, currentTenant, params)
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			if resp.StatusCode()/100 != 2 {
+				if len(resp.Body) != 0 {
+					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+					}
+					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+				}
+			}
+
+			return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
 		},
 	}
 	seriesCmd.Flags().StringArrayVarP(&seriesMatchers, "match", "m", nil, "Repeated series selector argument that selects the series to return.")
+	seriesCmd.Flags().StringVarP(&seriesStart, "start", "s", "", "Start timestamp.")
+	seriesCmd.Flags().StringVarP(&seriesEnd, "end", "e", "", "End timestamp.")
 	err := seriesCmd.MarkFlagRequired("match")
 	if err != nil {
 		panic(err)
 	}
 
+	// Labels command.
+	var (
+		labelMatchers        []string
+		labelStart, labelEnd string
+	)
 	labelsCmd := &cobra.Command{
 		Use:   "labels",
 		Short: "Get labels of a tenant.",
 		Long:  "Get labels of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/labels")
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
-				if len(b) != 0 {
-					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("%v error pretty printing: %v", perr, err)
-					}
-					return err
-				}
-				return err
+				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			return prettyPrintJSON(b, cmd.OutOrStdout())
+			params := &client.GetLabelsParams{}
+			if len(labelMatchers) > 0 {
+				params.Match = (*parameters.OptionalSeriesMatcher)(&labelMatchers)
+			}
+			if labelStart != "" {
+				params.Start = (*parameters.StartTS)(&labelStart)
+			}
+			if labelEnd != "" {
+				params.End = (*parameters.EndTS)(&labelEnd)
+			}
+
+			resp, err := f.GetLabelsWithResponse(ctx, currentTenant, params)
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			if resp.StatusCode()/100 != 2 {
+				if len(resp.Body) != 0 {
+					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+					}
+					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+				}
+			}
+
+			return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
 		},
 	}
+	labelsCmd.Flags().StringArrayVarP(&labelMatchers, "match", "m", []string{}, "Repeated series selector argument that selects the series from which to read the label names.")
+	labelsCmd.Flags().StringVarP(&labelStart, "start", "s", "", "Start timestamp.")
+	labelsCmd.Flags().StringVarP(&labelEnd, "end", "e", "", "End timestamp.")
 
-	var labelName string
+	// Labelvalues command.
+	var (
+		labelValuesMatchers                         []string
+		labelName, labelValuesStart, labelValuesEnd string
+	)
 	labelValuesCmd := &cobra.Command{
 		Use:   "labelvalues",
 		Short: "Get label values of a tenant.",
 		Long:  "Get label values of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/label/"+labelName+"/values")
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
-				if len(b) != 0 {
-					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("%v error pretty printing: %v", perr, err)
-					}
-					return err
-				}
-				return err
+				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			return prettyPrintJSON(b, cmd.OutOrStdout())
+			params := &client.GetLabelValuesParams{}
+			if len(labelValuesMatchers) > 0 {
+				params.Match = (*parameters.OptionalSeriesMatcher)(&labelValuesMatchers)
+			}
+			if labelValuesStart != "" {
+				params.Start = (*parameters.StartTS)(&labelValuesStart)
+			}
+			if labelValuesEnd != "" {
+				params.End = (*parameters.EndTS)(&labelValuesEnd)
+			}
+
+			resp, err := f.GetLabelValuesWithResponse(ctx, currentTenant, labelName, params)
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			if resp.StatusCode()/100 != 2 {
+				if len(resp.Body) != 0 {
+					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+					}
+					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+				}
+			}
+
+			return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
 		},
 	}
 	labelValuesCmd.Flags().StringVar(&labelName, "name", "", "Name of the label to fetch values for.")
+	labelValuesCmd.Flags().StringArrayVarP(&labelValuesMatchers, "match", "m", []string{}, "Repeated series selector argument that selects the series from which to read the label values.")
+	labelValuesCmd.Flags().StringVarP(&labelValuesStart, "start", "s", "", "Start timestamp.")
+	labelValuesCmd.Flags().StringVarP(&labelValuesEnd, "end", "e", "", "End timestamp.")
+
 	err = labelValuesCmd.MarkFlagRequired("name")
 	if err != nil {
 		panic(err)
 	}
 
+	// Rules command.
+	var (
+		ruleMatchers []string
+		ruleType     string
+	)
 	rulesCmd := &cobra.Command{
 		Use:   "rules",
 		Short: "Get rules of a tenant.",
 		Long:  "Get rules of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules")
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
-				if len(b) != 0 {
-					if perr := prettyPrintJSON(b, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("%v error pretty printing: %v", perr, err)
-					}
-					return err
-				}
-				return err
+				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			return prettyPrintJSON(b, cmd.OutOrStdout())
+			params := &client.GetRulesParams{}
+			if len(ruleMatchers) > 0 {
+				params.Match = &ruleMatchers
+			}
+			if ruleType != "" {
+				if ruleType != "alert" && ruleType != "record" {
+					return fmt.Errorf("not valid rule type")
+				}
+				params.Type = &ruleType
+			}
+
+			resp, err := f.GetRulesWithResponse(ctx, currentTenant, params)
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			if resp.StatusCode()/100 != 2 {
+				if len(resp.Body) != 0 {
+					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
+						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+					}
+					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+				}
+			}
+
+			return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
 		},
 	}
+	rulesCmd.Flags().StringArrayVarP(&ruleMatchers, "match", "m", []string{}, "Repeated series selector argument that selects the series from which to read the label values.")
+	rulesCmd.Flags().StringVarP(&ruleType, "type", "t", "", "Rule type to filter by i.e, alert or record. No filtering done if skipped.")
 
+	// Rules raw command.
 	rulesRawCmd := &cobra.Command{
 		Use:   "rules.raw",
 		Short: "Get configured rules of a tenant.",
 		Long:  "Get configured rules of a tenant.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := config.DoMetricsGetReq(ctx, logger, "/api/v1/rules/raw")
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
-				if len(b) != 0 {
-					fmt.Fprintln(cmd.OutOrStdout(), string(b))
-					return err
-				}
-				return err
+				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), string(b))
+			resp, err := f.GetRawRulesWithResponse(ctx, currentTenant)
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			if resp.StatusCode()/100 != 2 {
+				if len(resp.Body) != 0 {
+					fmt.Fprintln(cmd.OutOrStdout(), string(resp.Body))
+					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+				}
+			}
+
+			fmt.Fprintln(cmd.OutOrStdout(), string(resp.Body))
 			return nil
 		},
 	}
@@ -164,43 +265,131 @@ func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 			}
 			defer file.Close()
 
-			data, err := ioutil.ReadAll(file)
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
-				return fmt.Errorf("reading rule file: %w", err)
+				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), string(data))
-
-			b, err := config.DoMetricsPutReqWithYAML(ctx, logger, "/api/v1/rules/raw", data)
+			resp, err := f.SetRawRulesWithBodyWithResponse(ctx, currentTenant, "application/yaml", file)
 			if err != nil {
-				if len(b) != 0 {
-					fmt.Fprintln(cmd.OutOrStdout(), string(b))
-					return err
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			if resp.StatusCode()/100 != 2 {
+				if len(resp.Body) != 0 {
+					fmt.Fprintln(cmd.OutOrStdout(), string(resp.Body))
+					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
 				}
-				return err
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), string(b))
+			fmt.Fprintln(cmd.OutOrStdout(), string(resp.Body))
 			return nil
 		},
 	}
 
 	cmd.Flags().StringVar(&ruleFilePath, "rule.file", "", "Path to Rules configuration file, which will be set for a tenant.")
+	err := cmd.MarkFlagRequired("rule.file")
+	if err != nil {
+		panic(err)
+	}
 
 	return cmd
 }
 
-func NewMetricsQueryCmd(ctx context.Context, path ...string) *cobra.Command {
+func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
+	var (
+		isRange                             bool
+		evalTime, timeout, start, end, step string
+	)
 	cmd := &cobra.Command{
 		Use:     "query",
 		Short:   "Query metrics for a tenant.",
-		Long:    "Query metrics for a tenant. Pass a single valid PromQL query to fetch results for.",
+		Long:    "Query metrics for a tenant. Can get results for both instant and range queries. Pass a single valid PromQL query to fetch results for.",
 		Example: `obsctl query "prometheus_http_request_total"`,
 		Args:    cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			level.Info(logger).Log("msg", "query not implemented yet")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if args[0] == "" {
+				return fmt.Errorf("no query provided")
+			}
+
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
+			if err != nil {
+				return fmt.Errorf("custom fetcher: %w", err)
+			}
+
+			query := parameters.Query(args[0])
+
+			if isRange {
+				params := &client.GetRangeQueryParams{Query: &query}
+				if timeout != "" {
+					params.Timeout = (*parameters.QueryTimeout)(&timeout)
+				}
+
+				if start == "" || end == "" {
+					return fmt.Errorf("start/end timestamp not provided for range query")
+				}
+
+				params.Start = (*parameters.StartTS)(&start)
+				params.End = (*parameters.EndTS)(&end)
+
+				if step != "" {
+					params.Step = &step
+				}
+
+				resp, err := f.GetRangeQueryWithResponse(ctx, currentTenant, params)
+				if err != nil {
+					return fmt.Errorf("getting response: %w", err)
+				}
+
+				if resp.StatusCode()/100 != 2 {
+					if len(resp.Body) != 0 {
+						if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
+							return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+						}
+						return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+					}
+				}
+
+				return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
+			} else {
+				params := &client.GetInstantQueryParams{Query: &query}
+				if evalTime != "" {
+					params.Time = &evalTime
+				}
+				if timeout != "" {
+					params.Timeout = (*parameters.QueryTimeout)(&timeout)
+				}
+
+				resp, err := f.GetInstantQueryWithResponse(ctx, currentTenant, params)
+				if err != nil {
+					return fmt.Errorf("getting response: %w", err)
+				}
+
+				if resp.StatusCode()/100 != 2 {
+					if len(resp.Body) != 0 {
+						if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
+							return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+						}
+						return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+					}
+				}
+
+				return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
+			}
 		},
 	}
+
+	// Flags for instant query.
+	cmd.Flags().StringVar(&evalTime, "time", "", "Evaluation timestamp. Only used if --range is false.")
+
+	// Flags for range query.
+	cmd.Flags().BoolVar(&isRange, "range", false, "If true, query will be evaluated as a range query. See https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries.")
+	cmd.Flags().StringVarP(&start, "start", "s", "", "Start timestamp. Must be provided if --range is true.")
+	cmd.Flags().StringVarP(&end, "end", "e", "", "End timestamp. Must be provided if --range is true.")
+	cmd.Flags().StringVar(&step, "step", "", "Query resolution step width. Only used if --range is provided.")
+
+	// Common flags.
+	cmd.Flags().StringVar(&timeout, "timeout", "", "Evaluation timeout. Optional.")
 
 	return cmd
 }

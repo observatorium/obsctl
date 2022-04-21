@@ -189,8 +189,35 @@ Global Flags:
       --log.level string    Log filtering level. (default "info")
 ```
 
+You can also execute a PromQL range or instant query and view the results as a JSON response using `obsctl metrics query <PromQL>`.
+
+```bash mdox-exec="obsctl metrics query --help"
+Query metrics for a tenant. Can get results for both instant and range queries. Pass a single valid PromQL query to fetch results for.
+
+Usage:
+  obsctl metrics query [flags]
+
+Examples:
+obsctl query "prometheus_http_request_total"
+
+Flags:
+  -e, --end string       End timestamp. Must be provided if --range is true.
+  -h, --help             help for query
+      --range            If true, query will be evaluated as a range query. See https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries.
+  -s, --start string     Start timestamp. Must be provided if --range is true.
+      --step string      Query resolution step width. Only used if --range is provided.
+      --time string      Evaluation timestamp. Only used if --range is false.
+      --timeout string   Evaluation timeout. Optional.
+
+Global Flags:
+      --log.format string   Log format to use. (default "clilog")
+      --log.level string    Log filtering level. (default "info")
+```
+
+To execute a range query you can use the `--range` flag and provide the required options alongside the query.
+
 ## Future additons in obsctl
 - [ ] Add support for logging operations
 - [ ] Add support for tracing operations
-- [ ] Add support for PromQL query execution
+- [X] Add support for PromQL query execution
 - [ ] Add support for alerting configuration based on [proposal](https://github.com/observatorium/observatorium/pull/453)
