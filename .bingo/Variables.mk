@@ -47,9 +47,3 @@ $(MISSPELL): $(BINGO_DIR)/misspell.mod
 	@echo "(re)installing $(GOBIN)/misspell-v0.3.4"
 	@cd $(BINGO_DIR) && $(GO) build -mod=mod -modfile=misspell.mod -o=$(GOBIN)/misspell-v0.3.4 "github.com/client9/misspell/cmd/misspell"
 
-OAPI_CODEGEN := $(GOBIN)/oapi-codegen-v1.9.1
-$(OAPI_CODEGEN): $(BINGO_DIR)/oapi-codegen.mod
-	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/oapi-codegen-v1.9.1"
-	@cd $(BINGO_DIR) && $(GO) build -mod=mod -modfile=oapi-codegen.mod -o=$(GOBIN)/oapi-codegen-v1.9.1 "github.com/deepmap/oapi-codegen/cmd/oapi-codegen"
-
