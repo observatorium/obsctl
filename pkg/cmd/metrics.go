@@ -19,8 +19,10 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	}
 
 	// Series command.
-	var seriesMatchers []string
-	var seriesStart, seriesEnd string
+	var (
+		seriesMatchers         []string
+		seriesStart, seriesEnd string
+	)
 	seriesCmd := &cobra.Command{
 		Use:   "series",
 		Short: "Get series of a tenant.",
@@ -33,7 +35,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 
 			params := &client.GetSeriesParams{}
 			if len(seriesMatchers) > 0 {
-				params.Match = (parameters.SeriesMatcher)(seriesMatchers)
+				params.Match = seriesMatchers
 			}
 			if seriesStart != "" {
 				params.Start = (*parameters.StartTS)(&seriesStart)
@@ -68,8 +70,10 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	}
 
 	// Labels command.
-	var labelMatchers []string
-	var labelStart, labelEnd string
+	var (
+		labelMatchers        []string
+		labelStart, labelEnd string
+	)
 	labelsCmd := &cobra.Command{
 		Use:   "labels",
 		Short: "Get labels of a tenant.",
@@ -113,8 +117,10 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	labelsCmd.Flags().StringVarP(&labelEnd, "end", "e", "", "End timestamp.")
 
 	// Labelvalues command.
-	var labelValuesMatchers []string
-	var labelName, labelValuesStart, labelValuesEnd string
+	var (
+		labelValuesMatchers                         []string
+		labelName, labelValuesStart, labelValuesEnd string
+	)
 	labelValuesCmd := &cobra.Command{
 		Use:   "labelvalues",
 		Short: "Get label values of a tenant.",
@@ -164,8 +170,10 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 	}
 
 	// Rules command.
-	var ruleMatchers []string
-	var ruleType string
+	var (
+		ruleMatchers []string
+		ruleType     string
+	)
 	rulesCmd := &cobra.Command{
 		Use:   "rules",
 		Short: "Get rules of a tenant.",
@@ -289,8 +297,10 @@ func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 }
 
 func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
-	var isRange bool
-	var evalTime, timeout, start, end, step string
+	var (
+		isRange                             bool
+		evalTime, timeout, start, end, step string
+	)
 	cmd := &cobra.Command{
 		Use:     "query",
 		Short:   "Query metrics for a tenant.",
