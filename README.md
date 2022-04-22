@@ -1,5 +1,7 @@
 # obsctl
 
+![Tests](https://github.com/observatorium/obsctl/actions/workflows/go.yaml/badge.svg) [![Slack](https://img.shields.io/badge/join%20slack-%23observatorium-brightgreen.svg)](https://cloud-native.slack.com/archives/C0211ULK7BJ)
+
 A CLI to interact with Observatorium instances as a tenant and get/set various resources.
 
 ## Goals
@@ -26,6 +28,24 @@ Currently, we do not have a simple and convenient way to interact with the Obser
 - Tenants are then defined under each API
 - A current "context" is maintained which points to one API instance and a tenant under it
 - Users can switch between "contexts" and perform operations
+
+## Installing
+
+Requirements for your system:
+
+- Go 1.17+
+
+Install using,
+
+```bash
+go install github.com/observatorium/obsctl@latest
+```
+
+or via [bingo](https://github.com/bwplotka/bingo) if you want to pin it,
+
+```bash
+bingo get -u github.com/observatorium/obsctl
+```
 
 ## Usage
 
@@ -221,3 +241,7 @@ To execute a range query you can use the `--range` flag and provide the required
 - [ ] Add support for tracing operations
 - [X] Add support for PromQL query execution
 - [ ] Add support for alerting configuration based on [proposal](https://github.com/observatorium/observatorium/pull/453)
+
+## Contributing
+
+Any contributions are welcome! Please use GitHub Issues/Pull Requests as usual. Learn more on how to [get involved](https://github.com/observatorium/observatorium/blob/main/docs/community/get_involved.md)!
