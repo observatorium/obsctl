@@ -14,7 +14,7 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "context",
 		Short: "Manage context configuration.",
-		Long:  "Manage context configuration.",
+		Long:  "View/Manage context configuration.",
 	}
 
 	apiCmd := &cobra.Command{
@@ -64,9 +64,9 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 	apiRmCmd.Flags().StringVar(&rmName, "name", "", "The name of the Observatorium API instance to remove. No need to provide if only one API is saved.")
 
 	switchCmd := &cobra.Command{
-		Use:   "switch",
+		Use:   "switch <api>/<tenant>",
 		Short: "Switch to another context.",
-		Long:  "View/Add/Edit context configuration.",
+		Long:  "Selects a context entry.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cntxt := strings.Split(args[0], "/")

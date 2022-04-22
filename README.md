@@ -121,7 +121,7 @@ The first time you add an API and login as tenant, the current "context" will be
 But after the first time, when you add another API/tenant you need to manually switch the context by using `obsctl context switch <API Name>/<Tenant Name>`.
 
 ```bash mdox-exec="obsctl context --help"
-Manage context configuration.
+View/Manage context configuration.
 
 Usage:
   obsctl context [command]
