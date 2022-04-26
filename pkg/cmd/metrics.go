@@ -52,7 +52,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 			if resp.StatusCode()/100 != 2 {
 				if len(resp.Body) != 0 {
 					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", resp.StatusCode(), perr)
 					}
 					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
 				}
@@ -103,7 +103,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 			if resp.StatusCode()/100 != 2 {
 				if len(resp.Body) != 0 {
 					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", resp.StatusCode(), perr)
 					}
 					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
 				}
@@ -150,7 +150,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 			if resp.StatusCode()/100 != 2 {
 				if len(resp.Body) != 0 {
 					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", resp.StatusCode(), perr)
 					}
 					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
 				}
@@ -203,7 +203,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 			if resp.StatusCode()/100 != 2 {
 				if len(resp.Body) != 0 {
 					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", resp.StatusCode(), perr)
 					}
 					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
 				}
@@ -344,7 +344,7 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 				if resp.StatusCode()/100 != 2 {
 					if len(resp.Body) != 0 {
 						if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
-							return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+							return fmt.Errorf("request failed with statuscode %d pretty printing: %v", resp.StatusCode(), perr)
 						}
 						return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
 					}
@@ -368,7 +368,7 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 				if resp.StatusCode()/100 != 2 {
 					if len(resp.Body) != 0 {
 						if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
-							return fmt.Errorf("request failed with statuscode %d pretty printing: %v", perr, resp.StatusCode())
+							return fmt.Errorf("request failed with statuscode %d pretty printing: %v", resp.StatusCode(), perr)
 						}
 						return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
 					}

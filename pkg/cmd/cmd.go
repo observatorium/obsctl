@@ -75,7 +75,7 @@ func prettyPrintJSON(b []byte, w io.Writer) error {
 	var out bytes.Buffer
 	err := json.Indent(&out, b, "", "\t")
 	if err != nil {
-		level.Debug(logger).Log("msg", "failed indent", "json", b)
+		level.Debug(logger).Log("msg", "failed indent", "json", string(b))
 		return fmt.Errorf("indent JSON %w", err)
 	}
 
