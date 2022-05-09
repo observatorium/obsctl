@@ -3,8 +3,10 @@ package fetcher
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/observatorium/api/client"
 	"github.com/observatorium/api/client/parameters"
 	"github.com/observatorium/obsctl/pkg/config"
@@ -25,7 +27,13 @@ func NewCustomFetcher(ctx context.Context, logger log.Logger) (*client.ClientWit
 	fc, err := client.NewClientWithResponses(cfg.APIs[cfg.Current.API].URL, func(f *client.Client) error {
 		f.Client = c
 		return nil
-	})
+	}, client.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
+		level.Debug(logger).Log(
+			"method", req.Method,
+			"URL", req.URL,
+		)
+		return nil
+	}))
 	if err != nil {
 		return nil, "", fmt.Errorf("getting fetcher client: %w", err)
 	}
