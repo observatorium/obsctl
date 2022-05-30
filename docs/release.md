@@ -1,6 +1,6 @@
 # Release process
 
-We use semantic versioning for `obstctl` in format `vX.Y.Z`.
+We use semantic versioning for `obsctl` in format `vX.Y.Z`.
 
 Currently, we do not include binaries with our releases. Instead, users are instructed to install with `go install`.
 
