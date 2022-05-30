@@ -44,7 +44,7 @@ go install github.com/observatorium/obsctl@latest
 or via [bingo](https://github.com/bwplotka/bingo) if you want to pin it,
 
 ```bash
-bingo get -u github.com/observatorium/obsctl
+bingo get -u github.com/observatorium/obsctl@latest
 ```
 
 ## Usage
