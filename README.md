@@ -143,6 +143,8 @@ Global Flags:
 Use "obsctl context [command] --help" for more information about a command.
 ```
 
+You can also remove a context by using `obsctl context rm <API Name>/<Tenant Name>`. In case an API configuration does not have a tenant associated to it, the API configuration can be removed using `obsctl context api rm <API Name>`.
+
 ### Metrics
 
 You can use `obsctl metrics` to get/set metrics-based resources.
