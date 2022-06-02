@@ -127,9 +127,10 @@ Usage:
   obsctl context [command]
 
 Available Commands:
-  api         Add/edit API configuration.
+  api         Add/edit/remove API configuration.
   current     View current context configuration.
   list        View all context configuration.
+  rm          Remove context configuration.
   switch      Switch to another context.
 
 Flags:
