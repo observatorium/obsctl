@@ -19,8 +19,8 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 
 	apiCmd := &cobra.Command{
 		Use:   "api",
-		Short: "Add/edit API configuration.",
-		Long:  "Add/edit API configuration.",
+		Short: "Add/edit/remove API configuration.",
+		Long:  "Add/edit/remove API configuration.",
 	}
 
 	var addURL, addName string
@@ -136,10 +136,31 @@ func NewContextCommand(ctx context.Context) *cobra.Command {
 		},
 	}
 
+	rmCmd := &cobra.Command{
+		Use:   "rm <api>/<tenant>",
+		Short: "Remove context configuration.",
+		Long:  "Remove context configuration.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cntxt := strings.Split(args[0], "/")
+			if len(cntxt) != 2 {
+				return fmt.Errorf("invalid context name: use format <api>/<tenant>")
+			}
+
+			conf, err := config.Read(logger)
+			if err != nil {
+				return err
+			}
+
+			return conf.RemoveContext(logger, cntxt[0], cntxt[1])
+		},
+	}
+
 	cmd.AddCommand(apiCmd)
 	cmd.AddCommand(switchCmd)
 	cmd.AddCommand(currentCmd)
 	cmd.AddCommand(listCmd)
+	cmd.AddCommand(rmCmd)
 
 	apiCmd.AddCommand(apiAddCmd)
 	apiCmd.AddCommand(apiRmCmd)
