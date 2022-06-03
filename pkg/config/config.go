@@ -363,3 +363,16 @@ func (c *Config) SetCurrentContext(logger log.Logger, api string, tenant string)
 
 	return c.Save(logger)
 }
+
+// RemoveContext removes the specified context <api>/<tenant>. If the API configuration has only one tenant,
+// the API configuration is removed.
+func (c *Config) RemoveContext(logger log.Logger, api string, tenant string) error {
+	// If there is only one tenant per API configuration, remove the whole API configuration.
+	if _, ok := c.APIs[api].Contexts[tenant]; ok {
+		if len(c.APIs[api].Contexts) == 1 {
+			return c.RemoveAPI(logger, api)
+		}
+	}
+
+	return c.RemoveTenant(logger, tenant, api)
+}

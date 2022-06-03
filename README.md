@@ -127,9 +127,10 @@ Usage:
   obsctl context [command]
 
 Available Commands:
-  api         Add/edit API configuration.
+  api         Add/edit/remove API configuration.
   current     View current context configuration.
   list        View all context configuration.
+  rm          Remove context configuration.
   switch      Switch to another context.
 
 Flags:
@@ -141,6 +142,8 @@ Global Flags:
 
 Use "obsctl context [command] --help" for more information about a command.
 ```
+
+You can also remove a context by using `obsctl context rm <API Name>/<Tenant Name>`. In case an API configuration does not have a tenant associated with it, the API configuration can be removed using `obsctl context api rm <API Name>`.
 
 ### Metrics
 

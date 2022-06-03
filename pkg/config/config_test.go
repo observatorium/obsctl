@@ -920,3 +920,83 @@ func TestSetCurrentContext(t *testing.T) {
 		})
 	})
 }
+
+func TestRemoveContext(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", "test-save")
+	testutil.Ok(t, err)
+	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
+	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
+	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(tmpDir, "obsctl", "test", "config.json")))
+
+	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
+
+	t.Run("empty config", func(t *testing.T) {
+		cfg := Config{
+			pathOverride: filepath.Join(tmpDir, "obsctl", "test", "config.json"),
+		}
+
+		err := cfg.RemoveContext(tlogger, "stage", "first")
+		testutil.NotOk(t, err)
+		testutil.Equals(t, fmt.Errorf("api with name stage doesn't exist"), err)
+	})
+
+	t.Run("config with one API no tenant", func(t *testing.T) {
+		cfg := Config{
+			pathOverride: filepath.Join(tmpDir, "obsctl", "test", "config.json"),
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: nil},
+			},
+		}
+
+		err := cfg.RemoveContext(tlogger, "stage", "first")
+
+		testutil.NotOk(t, err)
+		testutil.Equals(t, fmt.Errorf("tenant with name first doesn't exist in api stage"), err)
+	})
+
+	t.Run("config with one API and one tenant", func(t *testing.T) {
+		cfg := Config{
+			pathOverride: filepath.Join(tmpDir, "obsctl", "test", "config.json"),
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
+					"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
+				}},
+			},
+		}
+
+		testutil.Ok(t, cfg.RemoveContext(tlogger, "stage", "first"))
+
+		testutil.Equals(t, cfg.APIs, map[string]APIConfig{})
+	})
+
+	t.Run("config with multiple APIs and tenants", func(t *testing.T) {
+		cfg := Config{
+			pathOverride: filepath.Join(tmpDir, "obsctl", "test", "config.json"),
+			APIs: map[string]APIConfig{
+				"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
+					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
+					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
+				}},
+				"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
+					"first":  {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
+					"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
+				}},
+			},
+		}
+
+		testutil.Ok(t, cfg.RemoveContext(tlogger, "stage", "second"))
+		testutil.Ok(t, cfg.RemoveContext(tlogger, "prod", "first"))
+
+		exp := map[string]APIConfig{
+			"stage": {URL: "https://stage.api:9090", Contexts: map[string]TenantConfig{
+				"first": {Tenant: "first", OIDC: &OIDCConfig{Audience: "obs", ClientID: "first", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
+			}},
+			"prod": {URL: "https://prod.api:9090", Contexts: map[string]TenantConfig{
+				"second": {Tenant: "second", OIDC: &OIDCConfig{Audience: "obs", ClientID: "second", ClientSecret: "secret", IssuerURL: "sso.obs.com"}},
+			}},
+		}
+
+		testutil.Equals(t, cfg.APIs, exp)
+	})
+}
