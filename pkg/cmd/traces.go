@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -16,8 +17,8 @@ func NewTraceServicesCmd(ctx context.Context) *cobra.Command {
 	var outputFormat string
 	cmd := &cobra.Command{
 		Use:   "services",
-		Short: "The names of services with trace information",
-		Long:  "The names of services with trace information",
+		Short: "List names of services",
+		Long:  "List names of services with trace information",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.Read(logger)
 			if err != nil {
@@ -49,9 +50,13 @@ func NewTraceServicesCmd(ctx context.Context) *cobra.Command {
 			}
 
 			if outputFormat == "table" {
-				return printTable(bodyBytes)
+				svcs, err := services(bodyBytes)
+				if err != nil {
+					return fmt.Errorf("parsing services: %w", err)
+				}
+				_ = printTable(cmd.OutOrStdout(), cmd.OutOrStderr(), svcs)
 			} else if outputFormat == "json" {
-				fmt.Printf("%s\n", string(bodyBytes))
+				prettyPrintJSON(bodyBytes, cmd.OutOrStdout())
 			} else {
 				return fmt.Errorf("unknown format %s", outputFormat)
 			}
@@ -76,22 +81,35 @@ func NewTracesCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func printTable(js []byte) error {
+func services(js []byte) ([]string, error) {
 	var result map[string]interface{}
 	err := json.Unmarshal(js, &result)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	data, ok := result["data"]
 	if !ok {
-		return fmt.Errorf("no JSON data in %s", string(js))
+		return nil, fmt.Errorf("no JSON data in %s", string(js))
 	}
 	services, ok := data.([]interface{})
 	if !ok {
-		return fmt.Errorf("expected JSON list in %s", string(js))
+		return nil, fmt.Errorf("expected JSON list in %s", string(js))
 	}
-	for _, svc := range services {
-		fmt.Printf("%s\n", svc)
+	retval := make([]string, len(services))
+	for i, svc := range services {
+		retval[i] = fmt.Sprintf("%s", svc)
+	}
+	return retval, nil
+}
+
+func printTable(out, err io.Writer, svcs []string) error {
+	if len(svcs) == 0 {
+		fmt.Fprintln(err, "No services found")
+		return nil
+	}
+	fmt.Fprintln(out, "SERVICE")
+	for _, svc := range svcs {
+		fmt.Fprintln(out, svc)
 	}
 	return nil
 }
