@@ -56,7 +56,7 @@ func NewTraceServicesCmd(ctx context.Context) *cobra.Command {
 				}
 				_ = printTable(cmd.OutOrStdout(), cmd.OutOrStderr(), svcs)
 			} else if outputFormat == "json" {
-				prettyPrintJSON(bodyBytes, cmd.OutOrStdout())
+				return prettyPrintJSON(bodyBytes, cmd.OutOrStdout())
 			} else {
 				return fmt.Errorf("unknown format %s", outputFormat)
 			}
