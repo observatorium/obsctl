@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 
@@ -20,6 +19,9 @@ func NewTraceServicesCmd(ctx context.Context) *cobra.Command {
 		Short: "List names of services",
 		Long:  "List names of services with trace information",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Don't print CLI flag usage if we get network error
+			cmd.SilenceUsage = true
+
 			cfg, err := config.Read(logger)
 			if err != nil {
 				return fmt.Errorf("getting reading config: %w", err)
@@ -49,15 +51,24 @@ func NewTraceServicesCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("%d: %s", resp.StatusCode, resp.Status)
 			}
 
-			if outputFormat == "table" {
+			switch outputFormat {
+			case "table":
 				svcs, err := services(bodyBytes)
 				if err != nil {
 					return fmt.Errorf("parsing services: %w", err)
 				}
-				_ = printTable(cmd.OutOrStdout(), cmd.OutOrStderr(), svcs)
-			} else if outputFormat == "json" {
+				if len(svcs) == 0 {
+					fmt.Fprintln(cmd.OutOrStderr(), "No services found")
+					return nil
+				}
+				fmt.Fprintln(cmd.OutOrStderr(), "SERVICE")
+				for _, svc := range svcs {
+					fmt.Fprintln(cmd.OutOrStdout(), svc)
+				}
+			case "json":
 				return prettyPrintJSON(bodyBytes, cmd.OutOrStdout())
-			} else {
+			default:
+				cmd.SilenceUsage = false
 				return fmt.Errorf("unknown format %s", outputFormat)
 			}
 			return nil
@@ -81,6 +92,8 @@ func NewTracesCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
+// services convert the internal Jaeger API /api/services response
+// into a list of services
 func services(js []byte) ([]string, error) {
 	var result map[string]interface{}
 	err := json.Unmarshal(js, &result)
@@ -91,6 +104,9 @@ func services(js []byte) ([]string, error) {
 	if !ok {
 		return nil, fmt.Errorf("no JSON data in %s", string(js))
 	}
+	if data == nil {
+		return []string{}, nil
+	}
 	services, ok := data.([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("expected JSON list in %s", string(js))
@@ -100,16 +116,4 @@ func services(js []byte) ([]string, error) {
 		retval[i] = fmt.Sprintf("%s", svc)
 	}
 	return retval, nil
-}
-
-func printTable(out, err io.Writer, svcs []string) error {
-	if len(svcs) == 0 {
-		fmt.Fprintln(err, "No services found")
-		return nil
-	}
-	fmt.Fprintln(out, "SERVICE")
-	for _, svc := range svcs {
-		fmt.Fprintln(out, svc)
-	}
-	return nil
 }
