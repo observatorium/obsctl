@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -24,13 +25,17 @@ func registerHydraUsers(t *testing.T, noOfTenants int) {
 		testutil.Ok(t, err)
 
 		if resp.StatusCode/100 != 2 {
-			t.Fatal(resp.Body)
+			if resp.StatusCode == 409 {
+				t.Log("Note: Hydra must be restarted for each run of the e2e test")
+			}
+			t.Fatalf("hydra register failed with status %d, body=%#v\n", resp.StatusCode, resp.Body)
 		}
 	}
 }
 
-func obtainToken(t *testing.T, issuerURL string, current int) string {
-	provider, err := oidc.NewProvider(context.Background(), "http://"+issuerURL+"/")
+func obtainToken(t *testing.T, realIssuerURL, identifiedIssuerUrl string, current int) string {
+	ctx := oidc.InsecureIssuerURLContext(context.Background(), identifiedIssuerUrl)
+	provider, err := oidc.NewProvider(ctx, "http://"+realIssuerURL+"/")
 	testutil.Ok(t, err)
 
 	ccc := clientcredentials.Config{
@@ -42,6 +47,10 @@ func obtainToken(t *testing.T, issuerURL string, current int) string {
 
 	ccc.EndpointParams = url.Values{
 		"audience": []string{"observatorium-" + fmt.Sprint(current)},
+	}
+
+	if runtime.GOOS == "darwin" {
+		ccc.TokenURL = strings.Replace(ccc.TokenURL, "host.docker.internal", "localhost", 1)
 	}
 
 	ts := ccc.TokenSource(context.Background())
