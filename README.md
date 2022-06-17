@@ -221,7 +221,7 @@ Usage:
   obsctl metrics query [flags]
 
 Examples:
-obsctl query "prometheus_http_request_total"
+obsctl metrics query "prometheus_http_request_total"
 
 Flags:
   -e, --end string       End timestamp. Must be provided if --range is true.
