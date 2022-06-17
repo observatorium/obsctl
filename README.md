@@ -62,6 +62,7 @@ Available Commands:
   login       Login as a tenant. Will also save tenant details locally.
   logout      Logout a tenant. Will remove locally saved details.
   metrics     Metrics based operations for Observatorium.
+  traces      Trace-based operations for Observatorium.
 
 Flags:
   -h, --help                help for obsctl
