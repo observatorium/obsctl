@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
+	"net/url"
 
 	"github.com/go-kit/log/level"
 	"github.com/observatorium/obsctl/pkg/config"
@@ -37,8 +37,12 @@ func NewTraceServicesCmd(ctx context.Context) *cobra.Command {
 				"URL", cfg.APIs[cfg.Current.API].URL,
 				"tenant", cfg.Current.Tenant)
 
-			url := fmt.Sprintf("%s%s", cfg.APIs[cfg.Current.API].URL, "api/traces/v1/rhobs/api/services")
-			resp, err := client.Get(url)
+			svcUrl, err := url.Parse(cfg.APIs[cfg.Current.API].URL)
+			if err != nil {
+				return fmt.Errorf("parsing url: %w", err)
+			}
+			svcUrl.Path = "api/traces/v1/rhobs/api/services"
+			resp, err := client.Get(svcUrl.String())
 			if err != nil {
 				return fmt.Errorf("getting: %w", err)
 			}
@@ -47,7 +51,11 @@ func NewTraceServicesCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("getting: %w", err)
 			}
 			if resp.StatusCode >= 300 {
-				fmt.Fprintf(os.Stdout, "%d: %s\n%s", resp.StatusCode, resp.Status, string(bodyBytes))
+				level.Debug(logger).Log(
+					"msg", "/api/services request failed",
+					"statusCode", resp.StatusCode,
+					"status", resp.Status,
+					"body", string(bodyBytes))
 				return fmt.Errorf("%d: %s", resp.StatusCode, resp.Status)
 			}
 
