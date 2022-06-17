@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/bwplotka/mdox/pkg/clilog"
@@ -71,15 +70,43 @@ func NewObsctlCmd(ctx context.Context) *cobra.Command {
 }
 
 // prettyPrintJSON prints indented JSON to stdout.
-func prettyPrintJSON(b []byte, w io.Writer) error {
+func prettyPrintJSON(b []byte) (string, error) {
 	var out bytes.Buffer
 	err := json.Indent(&out, b, "", "\t")
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed indent", "json", string(b))
-		return fmt.Errorf("indent JSON %w", err)
+		return "", fmt.Errorf("indent JSON %w", err)
 	}
 
-	fmt.Fprintln(w, out.String())
+	return out.String(), nil
+}
 
-	return nil
+func handleResponse(body []byte, contentType string, statusCode int, cmd *cobra.Command) error {
+	if statusCode/100 == 2 {
+		json, err := prettyPrintJSON(body)
+		if err != nil {
+			return fmt.Errorf("request failed with status code %d pretty printing: %v", statusCode, err)
+		}
+
+		fmt.Fprintln(cmd.OutOrStdout(), json)
+		return nil
+	}
+
+	if len(body) != 0 {
+		// Pretty print only if we know the error response is JSON.
+		// In future we might want to handle other types as well.
+		switch contentType {
+		case "application/json":
+			jsonErr, err := prettyPrintJSON(body)
+			if err != nil {
+				return fmt.Errorf("request failed with status code %d pretty printing: %v", statusCode, err)
+			}
+
+			return fmt.Errorf(jsonErr)
+		default:
+			return fmt.Errorf("request failed with status code %d, error: %s\n", statusCode, string(body))
+		}
+	}
+
+	return fmt.Errorf("request failed with status code %d\n", statusCode)
 }

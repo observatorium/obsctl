@@ -24,9 +24,10 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		seriesStart, seriesEnd string
 	)
 	seriesCmd := &cobra.Command{
-		Use:   "series",
-		Short: "Get series of a tenant.",
-		Long:  "Get series of a tenant.",
+		Use:          "series",
+		Short:        "Get series of a tenant.",
+		Long:         "Get series of a tenant.",
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
@@ -49,16 +50,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("getting response: %w", err)
 			}
 
-			if resp.StatusCode()/100 != 2 {
-				if len(resp.Body) != 0 {
-					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", resp.StatusCode(), perr)
-					}
-					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
-				}
-			}
-
-			return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
+			return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
 		},
 	}
 	seriesCmd.Flags().StringArrayVarP(&seriesMatchers, "match", "m", nil, "Repeated series selector argument that selects the series to return.")
@@ -100,16 +92,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("getting response: %w", err)
 			}
 
-			if resp.StatusCode()/100 != 2 {
-				if len(resp.Body) != 0 {
-					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", resp.StatusCode(), perr)
-					}
-					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
-				}
-			}
-
-			return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
+			return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
 		},
 	}
 	labelsCmd.Flags().StringArrayVarP(&labelMatchers, "match", "m", []string{}, "Repeated series selector argument that selects the series from which to read the label names.")
@@ -122,9 +105,10 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		labelName, labelValuesStart, labelValuesEnd string
 	)
 	labelValuesCmd := &cobra.Command{
-		Use:   "labelvalues",
-		Short: "Get label values of a tenant.",
-		Long:  "Get label values of a tenant.",
+		Use:          "labelvalues",
+		Short:        "Get label values of a tenant.",
+		Long:         "Get label values of a tenant.",
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
@@ -147,16 +131,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("getting response: %w", err)
 			}
 
-			if resp.StatusCode()/100 != 2 {
-				if len(resp.Body) != 0 {
-					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", resp.StatusCode(), perr)
-					}
-					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
-				}
-			}
-
-			return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
+			return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
 		},
 	}
 	labelValuesCmd.Flags().StringVar(&labelName, "name", "", "Name of the label to fetch values for.")
@@ -175,9 +150,10 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 		ruleType     string
 	)
 	rulesCmd := &cobra.Command{
-		Use:   "rules",
-		Short: "Get rules of a tenant.",
-		Long:  "Get rules of a tenant.",
+		Use:          "rules",
+		Short:        "Get rules of a tenant.",
+		Long:         "Get rules of a tenant.",
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
@@ -200,16 +176,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("getting response: %w", err)
 			}
 
-			if resp.StatusCode()/100 != 2 {
-				if len(resp.Body) != 0 {
-					if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
-						return fmt.Errorf("request failed with statuscode %d pretty printing: %v", resp.StatusCode(), perr)
-					}
-					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
-				}
-			}
-
-			return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
+			return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
 		},
 	}
 	rulesCmd.Flags().StringArrayVarP(&ruleMatchers, "match", "m", []string{}, "Repeated series selector argument that selects the series from which to read the label values.")
@@ -217,9 +184,10 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 
 	// Rules raw command.
 	rulesRawCmd := &cobra.Command{
-		Use:   "rules.raw",
-		Short: "Get configured rules of a tenant.",
-		Long:  "Get configured rules of a tenant.",
+		Use:          "rules.raw",
+		Short:        "Get configured rules of a tenant.",
+		Long:         "Get configured rules of a tenant.",
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
 			if err != nil {
@@ -234,7 +202,7 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 			if resp.StatusCode()/100 != 2 {
 				if len(resp.Body) != 0 {
 					fmt.Fprintln(cmd.OutOrStdout(), string(resp.Body))
-					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+					return fmt.Errorf("request failed with status code %d", resp.StatusCode())
 				}
 			}
 
@@ -255,9 +223,10 @@ func NewMetricsGetCmd(ctx context.Context) *cobra.Command {
 func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 	var ruleFilePath string
 	cmd := &cobra.Command{
-		Use:   "set",
-		Short: "Write Prometheus Rules configuration for a tenant.",
-		Long:  "Write Prometheus Rules configuration for a tenant.",
+		Use:          "set",
+		Short:        "Write Prometheus Rules configuration for a tenant.",
+		Long:         "Write Prometheus Rules configuration for a tenant.",
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			file, err := os.Open(ruleFilePath)
 			if err != nil {
@@ -278,7 +247,7 @@ func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 			if resp.StatusCode()/100 != 2 {
 				if len(resp.Body) != 0 {
 					fmt.Fprintln(cmd.OutOrStdout(), string(resp.Body))
-					return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
+					return fmt.Errorf("request failed with status code %d", resp.StatusCode())
 				}
 			}
 
@@ -302,11 +271,12 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 		evalTime, timeout, start, end, step string
 	)
 	cmd := &cobra.Command{
-		Use:     "query",
-		Short:   "Query metrics for a tenant.",
-		Long:    "Query metrics for a tenant. Can get results for both instant and range queries. Pass a single valid PromQL query to fetch results for.",
-		Example: `obsctl query "prometheus_http_request_total"`,
-		Args:    cobra.ExactArgs(1),
+		Use:          "query",
+		Short:        "Query metrics for a tenant.",
+		Long:         "Query metrics for a tenant. Can get results for both instant and range queries. Pass a single valid PromQL query to fetch results for.",
+		Example:      `obsctl metrics query "prometheus_http_request_total"`,
+		Args:         cobra.ExactArgs(1),
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if args[0] == "" {
 				return fmt.Errorf("no query provided")
@@ -341,16 +311,7 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 					return fmt.Errorf("getting response: %w", err)
 				}
 
-				if resp.StatusCode()/100 != 2 {
-					if len(resp.Body) != 0 {
-						if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
-							return fmt.Errorf("request failed with statuscode %d pretty printing: %v", resp.StatusCode(), perr)
-						}
-						return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
-					}
-				}
-
-				return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
+				return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
 			} else {
 				params := &client.GetInstantQueryParams{Query: &query}
 				if evalTime != "" {
@@ -365,16 +326,7 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 					return fmt.Errorf("getting response: %w", err)
 				}
 
-				if resp.StatusCode()/100 != 2 {
-					if len(resp.Body) != 0 {
-						if perr := prettyPrintJSON(resp.Body, cmd.OutOrStdout()); perr != nil {
-							return fmt.Errorf("request failed with statuscode %d pretty printing: %v", resp.StatusCode(), perr)
-						}
-						return fmt.Errorf("request failed with statuscode %d", resp.StatusCode())
-					}
-				}
-
-				return prettyPrintJSON(resp.Body, cmd.OutOrStdout())
+				return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
 			}
 		},
 	}
