@@ -74,7 +74,11 @@ func NewTraceServicesCmd(ctx context.Context) *cobra.Command {
 					fmt.Fprintln(cmd.OutOrStdout(), svc)
 				}
 			case "json":
-				return prettyPrintJSON(bodyBytes, cmd.OutOrStdout())
+				json, err := prettyPrintJSON(bodyBytes)
+				if err != nil {
+					return fmt.Errorf("failed to pretty print JSON: %s", err)
+				}
+				fmt.Fprintln(cmd.OutOrStdout(), json)
 			default:
 				cmd.SilenceUsage = false
 				return fmt.Errorf("unknown format %s", outputFormat)
