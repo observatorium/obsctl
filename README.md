@@ -47,6 +47,14 @@ or via [bingo](https://github.com/bwplotka/bingo) if you want to pin it,
 bingo get -l github.com/observatorium/obsctl@latest
 ```
 
+## Quickstart
+
+You can get started using obsctl in three simple steps,
+
+1) Add an API: `obsctl context api add --name='example-staging-api' --url='<OBSERVATORIUM_URL>'`
+2) Login as tenant for the api: `obsctl login --api='example-staging-api' --oidc.audience='<AUDIENCE>' --oidc.client-id='<CLIENT_ID>' --oidc.client-secret='<SECRET>' --oidc.issuer-url='<ISSUER_URL>' --tenant='example-tenant'`
+3) Perform operations: `obsctl metrics get rules`
+
 ## Usage
 
 ```bash mdox-exec="obsctl --help"
