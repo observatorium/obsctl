@@ -7,9 +7,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/efficientgo/e2e"
 	"github.com/efficientgo/tools/core/pkg/testutil"
 	"github.com/observatorium/obsctl/pkg/cmd"
@@ -17,9 +19,13 @@ import (
 
 const (
 	envName       = "obsctl-test"
-	hydraURL      = "172.17.0.1:4444" // TODO(saswatamcode): Make this macOS-friendly.
-	noOfTenants   = 2                 // Configure number of tenants.
-	defaultTenant = 1                 // Set default tenant to use.
+	localHydraURL = "localhost:4444" // The address that processes see Hydra
+	noOfTenants   = 2                // Configure number of tenants.
+	defaultTenant = 1                // Set default tenant to use.
+)
+
+var (
+	dockerHydraURL = fmt.Sprintf("%s:4444", getHostHost()) // The address where Docker containers see Hydra
 )
 
 // preTest spins up all services required for metrics:
@@ -41,7 +47,7 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 
 	registerHydraUsers(t, noOfTenants) // Only need to register this once.
 
-	createTenantsYAML(t, e, hydraURL, noOfTenants)
+	createTenantsYAML(t, e, dockerHydraURL, noOfTenants)
 	createRBACYAML(t, e, noOfTenants)
 
 	read, write, rule := startServicesForMetrics(t, e, envName)
@@ -51,9 +57,9 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 	testutil.Ok(t, e2e.StartAndWaitReady(api))
 	testutil.Ok(t, os.MkdirAll(filepath.Join(e.SharedDir(), "obsctl"), 0750)) // Create config file beforehand.
 
-	createObsctlConfigJson(t, e, hydraURL, "http://"+api.Endpoint("http")+"/", noOfTenants, defaultTenant)
+	createObsctlConfigJson(t, e, localHydraURL, "http://"+api.Endpoint("http")+"/", noOfTenants, defaultTenant)
 
-	token := obtainToken(t, hydraURL, defaultTenant)
+	token := obtainToken(t, localHydraURL, dockerHydraURL, defaultTenant)
 
 	up, err := newUpRun(
 		e, "up-metrics-read-write",
@@ -80,7 +86,8 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get labels for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background())
+		ctx := oidc.InsecureIssuerURLContext(context.Background(), dockerHydraURL)
+		contextCmd := cmd.NewObsctlCmd(ctx)
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "labels"})
@@ -107,7 +114,8 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get labels for a tenant with match flag", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background())
+		ctx := oidc.InsecureIssuerURLContext(context.Background(), dockerHydraURL)
+		contextCmd := cmd.NewObsctlCmd(ctx)
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "labels", "--match=observatorium_write"})
@@ -135,7 +143,8 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get labelvalues for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background())
+		ctx := oidc.InsecureIssuerURLContext(context.Background(), dockerHydraURL)
+		contextCmd := cmd.NewObsctlCmd(ctx)
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "labelvalues", "--name=test"})
@@ -159,7 +168,8 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get rules for a tenant (none configured)", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background())
+		ctx := oidc.InsecureIssuerURLContext(context.Background(), dockerHydraURL)
+		contextCmd := cmd.NewObsctlCmd(ctx)
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "rules"})
@@ -183,7 +193,8 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get raw rules for a tenant (none configured)", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background())
+		ctx := oidc.InsecureIssuerURLContext(context.Background(), dockerHydraURL)
+		contextCmd := cmd.NewObsctlCmd(ctx)
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "rules.raw"})
@@ -198,7 +209,8 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("set rules for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background())
+		ctx := oidc.InsecureIssuerURLContext(context.Background(), dockerHydraURL)
+		contextCmd := cmd.NewObsctlCmd(ctx)
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "set", "--rule.file=" + filepath.Join(e.SharedDir(), "obsctl", "rules.yaml")})
@@ -215,7 +227,8 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get rules.raw for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background())
+		ctx := oidc.InsecureIssuerURLContext(context.Background(), dockerHydraURL)
+		contextCmd := cmd.NewObsctlCmd(ctx)
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "rules.raw"})
@@ -232,7 +245,8 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get rules for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background())
+		ctx := oidc.InsecureIssuerURLContext(context.Background(), dockerHydraURL)
+		contextCmd := cmd.NewObsctlCmd(ctx)
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "rules"})
@@ -254,7 +268,8 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get rules for a tenant with type flag", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background())
+		ctx := oidc.InsecureIssuerURLContext(context.Background(), dockerHydraURL)
+		contextCmd := cmd.NewObsctlCmd(ctx)
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "rules", "--type=record"})
@@ -272,7 +287,8 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("get series for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background())
+		ctx := oidc.InsecureIssuerURLContext(context.Background(), dockerHydraURL)
+		contextCmd := cmd.NewObsctlCmd(ctx)
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "get", "series", "--match", "observatorium_write"})
@@ -292,7 +308,8 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	t.Run("query metrics for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
-		contextCmd := cmd.NewObsctlCmd(context.Background())
+		ctx := oidc.InsecureIssuerURLContext(context.Background(), dockerHydraURL)
+		contextCmd := cmd.NewObsctlCmd(ctx)
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "query", "observatorium_write{test=\"obsctl\"}"})
@@ -310,4 +327,12 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		assertResponse(t, string(got), "vector")
 	})
 
+}
+
+func getHostHost() string {
+	switch runtime.GOOS {
+	case "darwin":
+		return "host.docker.internal"
+	}
+	return "172.17.0.1"
 }

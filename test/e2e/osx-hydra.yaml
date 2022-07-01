@@ -1,0 +1,5 @@
+strategies:
+  access_token: jwt
+urls:
+  self:
+    issuer: http://host.docker.internal:4444/
