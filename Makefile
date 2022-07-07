@@ -45,6 +45,12 @@ build: check-git deps ## Build obsctl.
 	@GOBIN=$(GOBIN) go build -v -ldflags '-w -extldflags '-static'' -o obsctl
 	@echo ">> obsctl built at $(PWD)/obsctl"
 
+.PHONY: install
+install: check-git deps ## Installs obsctl.
+	@echo ">> installing obsctl"
+	@GOBIN=$(GOBIN) go install github.com/observatorium/obsctl
+	@echo ">> obsctl installed"
+
 .PHONY: check-comments
 check-comments: ## Checks Go code comments if they have trailing period (excludes protobuffers and vendor files). Comments with more than 3 spaces at beginning are omitted from the check, example: '//    - foo'.
 	@echo ">> checking Go comments trailing periods\n\n\n"
