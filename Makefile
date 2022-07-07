@@ -48,7 +48,7 @@ build: check-git deps ## Build obsctl.
 .PHONY: install
 install: check-git deps ## Installs obsctl.
 	@echo ">> installing obsctl"
-	@GOBIN=$(GOBIN) go install github.com/observatorium/obsctl
+	@GOBIN=$(GOBIN) go install -v -ldflags '-w -extldflags '-static'' github.com/observatorium/obsctl
 	@echo ">> obsctl installed"
 
 .PHONY: check-comments
