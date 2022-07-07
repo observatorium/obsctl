@@ -31,20 +31,32 @@ Currently, we do not have a simple and convenient way to interact with the Obser
 
 ## Installing
 
+### From the source
+
 Requirements for your system:
 
-- Go 1.17+
+- Go 1.18+
 
-Install using,
+Install using:
 
 ```bash
 go install github.com/observatorium/obsctl@latest
 ```
 
-or via [bingo](https://github.com/bwplotka/bingo) if you want to pin it,
+### Using [bingo](https://github.com/bwplotka/bingo) to pin versions
+
+Requirements for your system:
+
+- [bingo](https://github.com/bwplotka/bingo#installing)
 
 ```bash
 bingo get -l github.com/observatorium/obsctl@latest
+```
+
+### Run using Docker
+
+```bash
+docker run --rm -i -t quay.io/observatorium/obsctl
 ```
 
 ## Quickstart

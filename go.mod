@@ -1,6 +1,6 @@
 module github.com/observatorium/obsctl
 
-go 1.17
+go 1.18
 
 require (
 	github.com/bwplotka/mdox v0.9.0
