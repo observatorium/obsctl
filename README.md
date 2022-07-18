@@ -235,6 +235,7 @@ obsctl metrics query "prometheus_http_request_total"
 
 Flags:
   -e, --end string       End timestamp. Must be provided if --range is true.
+      --graph string     If specified, range query result will output an (ascii|png) graph.
   -h, --help             help for query
       --range            If true, query will be evaluated as a range query. See https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries.
   -s, --start string     Start timestamp. Must be provided if --range is true.
