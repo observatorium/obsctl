@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -17,9 +18,8 @@ import (
 
 const (
 	envName       = "obsctl-test"
-	hydraURL      = "172.17.0.1:4444" // TODO(saswatamcode): Make this macOS-friendly.
-	noOfTenants   = 2                 // Configure number of tenants.
-	defaultTenant = 1                 // Set default tenant to use.
+	noOfTenants   = 2 // Configure number of tenants.
+	defaultTenant = 1 // Set default tenant to use.
 )
 
 // preTest spins up all services required for metrics:
@@ -38,6 +38,12 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 
 	err = os.MkdirAll(filepath.Join(e.SharedDir(), "config"), 0750)
 	testutil.Ok(t, err)
+
+	hydraURL := "172.17.0.1:4444"
+	switch runtime.GOOS {
+	case "darwin":
+		hydraURL = "docker.for.mac.localhost:4444"
+	}
 
 	registerHydraUsers(t, noOfTenants) // Only need to register this once.
 
