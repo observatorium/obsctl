@@ -19,6 +19,7 @@ const (
 	thanosImage           = "quay.io/thanos/thanos:v0.25.1"
 	thanosRuleSyncerImage = "quay.io/observatorium/thanos-rule-syncer:main-2022-02-01-d4c24bc"
 	rulesObjectStoreImage = "quay.io/observatorium/rules-objstore:main-2022-01-19-8650540"
+	lokiImage             = "grafana/loki:2.3.0"
 
 	logLevelError = "error"
 	// logLevelDebug = "debug"
@@ -28,6 +29,7 @@ type apiOptions struct {
 	metricsReadEndpoint  string
 	metricsWriteEndpoint string
 	metricsRulesEndpoint string
+	logsEndpoint         string
 }
 
 type apiOption func(*apiOptions)
@@ -207,6 +209,38 @@ func startServicesForMetrics(t *testing.T, e e2e.Environment, envName string) (s
 	return thanosQuery.InternalEndpoint("http"),
 		thanosReceive.InternalEndpoint("remote_write"),
 		rulesObjstore.InternalEndpoint("http")
+}
+
+func startServicesForLogs(t *testing.T, e e2e.Environment) (
+	logsEndpoint string,
+	// logsExtEndpoint string,
+) {
+	loki := newLokiService(e)
+	testutil.Ok(t, e2e.StartAndWaitReady(loki))
+
+	return loki.InternalEndpoint("http"), loki.Endpoint("http")
+}
+
+func newLokiService(e e2e.Environment) e2e.InstrumentedRunnable {
+	ports := map[string]int{"http": 3100}
+
+	args := e2e.BuildArgs(map[string]string{
+		"-config.file": filepath.Join(configsContainerPath, "loki.yml"),
+		"-target":      "all",
+		"-log.level":   logLevelError,
+	})
+
+	return e2e.NewInstrumentedRunnable(e, "loki").WithPorts(ports, "http").Init(
+		e2e.StartOptions{
+			Image:   lokiImage,
+			Command: e2e.NewCommandWithoutEntrypoint("loki", args...),
+			// It takes ~1m before Loki's ingester starts reporting 200,
+			// but it does not seem to affect tests, therefore we accept
+			// 503 here as well to save time.
+			Readiness: e2e.NewHTTPReadinessProbe("http", "/ready", 200, 503),
+			User:      strconv.Itoa(os.Getuid()),
+		},
+	)
 }
 
 type runParams struct {
