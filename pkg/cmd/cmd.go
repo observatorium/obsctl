@@ -63,6 +63,7 @@ func NewObsctlCmd(ctx context.Context) *cobra.Command {
 	cmd.AddCommand(NewLoginCmd(ctx))
 	cmd.AddCommand(NewLogoutCmd(ctx))
 	cmd.AddCommand(NewTracesCmd(ctx))
+	cmd.AddCommand(NewLogsCmd(ctx))
 
 	cmd.PersistentFlags().StringVar(&logLevel, "log.level", "info", "Log filtering level.")
 	cmd.PersistentFlags().StringVar(&logFormat, "log.format", logFormatCLILog, "Log format to use.")

@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	e2einteractive "github.com/efficientgo/e2e/interactive"
+
 	"github.com/efficientgo/e2e"
 	"github.com/efficientgo/tools/core/pkg/testutil"
 	"github.com/observatorium/obsctl/pkg/cmd"
@@ -51,8 +53,9 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 	createRBACYAML(t, e, noOfTenants)
 
 	read, write, rule := startServicesForMetrics(t, e, envName)
+	logsEndpoint := startServicesForLogs(t, e)
 
-	api, err := newObservatoriumAPIService(e, withMetricsEndpoints(read, write), withRulesEndpoint(rule))
+	api, err := newObservatoriumAPIService(e, withMetricsEndpoints(read, write), withRulesEndpoint(rule), withLogsEndpoints(logsEndpoint))
 	testutil.Ok(t, err)
 	testutil.Ok(t, e2e.StartAndWaitReady(api))
 	testutil.Ok(t, os.MkdirAll(filepath.Join(e.SharedDir(), "obsctl"), 0750)) // Create config file beforehand.
@@ -73,6 +76,26 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 
 	testutil.Ok(t, e2e.StartAndWaitReady(up))
 	testutil.Ok(t, err)
+
+	up, err = newUpRun(
+		e, "up-logs-read-write",
+		"https://"+api.InternalEndpoint("https")+"/api/logs/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/loki/api/v1/query",
+		"https://"+api.InternalEndpoint("https")+"/api/logs/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/loki/api/v1/push",
+		withToken(token),
+		withRunParameters(&runParams{initialDelay: "100ms", period: "1s", threshold: "1", latency: "10s", duration: "0"}),
+	)
+
+	testutil.Ok(t, err)
+	testutil.Ok(t, e2e.StartAndWaitReady(up))
+
+	fmt.Printf("\n")
+	fmt.Printf("You're all set up!\n")
+	fmt.Printf("========================================\n")
+	fmt.Printf("Observatorium API on host machine: 		%s \n", api.Endpoint("https"))
+	fmt.Printf("Observatorium internal server on host machine: 	%s \n", api.Endpoint("http-internal"))
+	fmt.Printf("API Token: 					%s \n\n", token)
+
+	testutil.Ok(t, e2einteractive.RunUntilEndpointHit())
 
 	time.Sleep(30 * time.Second) // Wait a bit for up to get some metrics in.
 
@@ -302,6 +325,104 @@ func TestObsctlMetricsCommands(t *testing.T) {
 
 		contextCmd.SetOut(b)
 		contextCmd.SetArgs([]string{"metrics", "query", "observatorium_write{test=\"obsctl\"}"})
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := ioutil.ReadAll(b)
+		testutil.Ok(t, err)
+
+		assertResponse(t, string(got), "observatorium_write")
+		assertResponse(t, string(got), "tenant_id")
+		assertResponse(t, string(got), "test")
+		assertResponse(t, string(got), "obsctl")
+		assertResponse(t, string(got), "metric")
+		assertResponse(t, string(got), "resultType")
+		assertResponse(t, string(got), "vector")
+	})
+
+}
+
+func TestObsctlLogsCommands(t *testing.T) {
+	e := preTest(t)
+	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(e.SharedDir(), "obsctl", "config.json")))
+
+	t.Run("get labels for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "get", "labels"})
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := ioutil.ReadAll(b)
+		testutil.Ok(t, err)
+
+		exp := `{
+	"status": "success",
+	"data": [
+		"__name__",
+		"receive_replica",
+		"tenant_id",
+		"test"
+	]
+}
+
+`
+
+		testutil.Equals(t, exp, string(got))
+	})
+
+	t.Run("get labelvalues for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "get", "labelvalues", "--name=test"})
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := ioutil.ReadAll(b)
+		testutil.Ok(t, err)
+
+		exp := `{
+	"status": "success",
+	"data": [
+		"obsctl"
+	]
+}
+
+`
+
+		testutil.Equals(t, exp, string(got))
+	})
+
+	t.Run("get series for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "get", "series", "--match", "observatorium_write"})
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := ioutil.ReadAll(b)
+		testutil.Ok(t, err)
+
+		// Using assertResponse here as we cannot know exact tenant_id.
+		// As this is response from Query /api/v1/series, it should contain label of series written by up.
+		assertResponse(t, string(got), "observatorium_write")
+		assertResponse(t, string(got), "tenant_id")
+		assertResponse(t, string(got), "test")
+		assertResponse(t, string(got), "obsctl")
+	})
+
+	t.Run("query logs for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "query", "observatorium_write{test=\"obsctl\"}"})
 		testutil.Ok(t, contextCmd.Execute())
 
 		got, err := ioutil.ReadAll(b)

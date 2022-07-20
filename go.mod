@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/observatorium/api v0.1.3-0.20220419075223-a158e7fdc72f
 	github.com/oklog/run v1.1.0
-	github.com/spf13/cobra v1.4.0
+	github.com/spf13/cobra v1.5.0
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 )
 
