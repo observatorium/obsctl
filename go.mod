@@ -38,3 +38,6 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
+
+// workaround for https://github.com/efficientgo/e2e/issues/41 to make obsctl build
+replace github.com/efficientgo/tools/core v0.0.0-20210129205121-421d0828c9a6 => github.com/efficientgo/tools/core v0.0.0-20210731122119-5d4a0645ce9a
