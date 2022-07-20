@@ -9,9 +9,11 @@ OS="$(uname)"
 case $OS in
 'Linux')
     HYDRA_OS='linux'
+    HYDRA_CONFIG='hydra.yaml'
     ;;
 'Darwin')
     HYDRA_OS='macos'
+    HYDRA_CONFIG='hydra-for-macOS.yaml'
     ;;
 *)
     echo "Unsupported OS for this script: $OS"
@@ -29,7 +31,7 @@ gethydra() {
 }
 
 startHydra() {
-    (DSN=memory $WD/test/e2e/tmp/bin/hydra serve all --dangerous-force-http --config $WD/test/e2e/hydra.yaml &>/dev/null) &
+    (DSN=memory $WD/test/e2e/tmp/bin/hydra serve all --dangerous-force-http --config $WD/test/e2e/$HYDRA_CONFIG &>/dev/null) &
     echo "-------------------------------------------"
     echo "- Waiting for Hydra to come up...  -"
     echo "-------------------------------------------"
