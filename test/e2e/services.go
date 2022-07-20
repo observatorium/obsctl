@@ -47,6 +47,12 @@ func withRulesEndpoint(rulesEndpoint string) apiOption {
 	}
 }
 
+func withLogsEndpoints(endpoint string) apiOption {
+	return func(o *apiOptions) {
+		o.logsEndpoint = endpoint
+	}
+}
+
 func newObservatoriumAPIService(
 	e e2e.Environment,
 	options ...apiOption,
@@ -218,14 +224,15 @@ func startServicesForLogs(t *testing.T, e e2e.Environment) (
 	loki := newLokiService(e)
 	testutil.Ok(t, e2e.StartAndWaitReady(loki))
 
-	return loki.InternalEndpoint("http"), loki.Endpoint("http")
+	return loki.InternalEndpoint("http")
+	// , loki.Endpoint("http")
 }
 
 func newLokiService(e e2e.Environment) e2e.InstrumentedRunnable {
 	ports := map[string]int{"http": 3100}
 
 	args := e2e.BuildArgs(map[string]string{
-		"-config.file": filepath.Join(configsContainerPath, "loki.yml"),
+		"-config.file": filepath.Join("/shared/config", "loki.yml"),
 		"-target":      "all",
 		"-log.level":   logLevelError,
 	})
