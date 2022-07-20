@@ -1,0 +1,5 @@
+strategies:
+  access_token: jwt
+urls:
+  self:
+    issuer: http://docker.for.mac.localhost:4444/
