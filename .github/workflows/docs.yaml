@@ -3,7 +3,7 @@ name: docs
 on:
   push:
     branches:
-      - main
+      - add-log-support
   pull_request:
 
 jobs:
