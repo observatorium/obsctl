@@ -69,6 +69,7 @@ Available Commands:
   help        Help about any command
   login       Login as a tenant. Will also save tenant details locally.
   logout      Logout a tenant. Will remove locally saved details.
+  logs        logs based operations for Observatorium.
   metrics     Metrics based operations for Observatorium.
   traces      Trace-based operations for Observatorium.
 

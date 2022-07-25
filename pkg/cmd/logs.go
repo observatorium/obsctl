@@ -10,19 +10,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewLogsCmd(ctx context.Context) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "logs",
-		Short: "logs based operations for Observatorium.",
-		Long:  "logs based operations for Observatorium.",
-	}
-
-	cmd.AddCommand(NewLogsGetCmd(ctx))
-	cmd.AddCommand(NewMetricsQueryCmd(ctx))
-
-	return cmd
-}
-
 func NewLogsGetCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
@@ -87,7 +74,7 @@ func NewLogsGetCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			params := &client.GetLogLabelParams{}
+			params := &client.GetLogLabelsParams{}
 			if labelStart != "" {
 				params.Start = (*parameters.StartTS)(&labelStart)
 			}
@@ -95,7 +82,7 @@ func NewLogsGetCmd(ctx context.Context) *cobra.Command {
 				params.End = (*parameters.EndTS)(&labelEnd)
 			}
 
-			resp, err := f.GetLabelsWithResponse(ctx, currentTenant, params)
+			resp, err := f.GetLogLabelsWithResponse(ctx, currentTenant, params)
 			if err != nil {
 				return fmt.Errorf("getting response: %w", err)
 			}
@@ -131,7 +118,7 @@ func NewLogsGetCmd(ctx context.Context) *cobra.Command {
 				params.End = (*parameters.EndTS)(&labelValuesEnd)
 			}
 
-			resp, err := f.GetLabelValuesWithResponse(ctx, currentTenant, labelName, params)
+			resp, err := f.GetLogLabelValuesWithResponse(ctx, currentTenant, labelName, params)
 			if err != nil {
 				return fmt.Errorf("getting response: %w", err)
 			}
@@ -157,8 +144,10 @@ func NewLogsGetCmd(ctx context.Context) *cobra.Command {
 
 func NewLogsQueryCmd(ctx context.Context) *cobra.Command {
 	var (
-		isRange                                            bool
-		time, interval, start, end, step, limit, direction string
+		isRange                     bool
+		time, start, end, direction string
+		limit                       float32
+		step, interval              interface{}
 	)
 	cmd := &cobra.Command{
 		Use:          "query",
@@ -180,8 +169,8 @@ func NewLogsQueryCmd(ctx context.Context) *cobra.Command {
 			query := parameters.LogqlQuery(args[0])
 
 			if isRange {
-				params := &client.GetLogRangeQueryParams{LogqlQuery: &query}
-				if limit != "" {
+				params := &client.GetLogRangeQueryParams{Query: &query}
+				if limit != 0 {
 					params.Limit = (*parameters.Limit)(&limit)
 				}
 
@@ -204,19 +193,19 @@ func NewLogsQueryCmd(ctx context.Context) *cobra.Command {
 					params.Direction = &direction
 				}
 
-				resp, err := f.GetRangeQueryWithResponse(ctx, currentTenant, params)
+				resp, err := f.GetLogRangeQueryWithResponse(ctx, currentTenant, params)
 				if err != nil {
 					return fmt.Errorf("getting response: %w", err)
 				}
 
 				return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
 			} else {
-				params := &client.GetLogInstantQueryParams{LogqlQuery: &query}
+				params := &client.GetLogInstantQueryParams{Query: &query}
 				if time != "" {
 					params.Time = &time
 				}
 
-				if limit != "" {
+				if limit != 0 {
 					params.Limit = (*parameters.Limit)(&limit)
 				}
 
@@ -224,7 +213,7 @@ func NewLogsQueryCmd(ctx context.Context) *cobra.Command {
 					params.Direction = &direction
 				}
 
-				resp, err := f.GetInstantQueryWithResponse(ctx, currentTenant, params)
+				resp, err := f.GetLogInstantQueryWithResponse(ctx, currentTenant, params)
 				if err != nil {
 					return fmt.Errorf("getting response: %w", err)
 				}
@@ -241,12 +230,25 @@ func NewLogsQueryCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().BoolVar(&isRange, "range", false, "If true, query will be evaluated as a range query. See https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries.")
 	cmd.Flags().StringVarP(&start, "start", "s", "", "Start timestamp. Must be provided if --range is true.")
 	cmd.Flags().StringVarP(&end, "end", "e", "", "End timestamp. Must be provided if --range is true.")
-	cmd.Flags().StringVar(&step, "step", "", "Query resolution step width. Only used if --range is provided.")
-	cmd.Flags().StringVar(&interval, "interval", "", "return entries at (or greater than) the specified interval,Only used if --range is provided.")
+	// cmd.Flags().StringVarP(&step, "step", "", "", "Query resolution step width. Only used if --range is provided.")
+	// cmd.Flags().StringVarP(&interval, "interval", "", "return entries at (or greater than) the specified interval,Only used if --range is provided.")
 
-	// Common flags.
-	cmd.Flags().StringVar(&limit, "limit", "", "The max number of entries to return. Only used if --range is false.")
+	// // Common flags.
+	// cmd.Flags().StringVarP(&limit, "limit", "", "The max number of entries to return. Only used if --range is false.", " ")
 	cmd.Flags().StringVar(&direction, "direction", "", "Determines the sort order of logs.. Only used if --range is false.")
+
+	return cmd
+}
+
+func NewLogsCmd(ctx context.Context) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "logs",
+		Short: "logs based operations for Observatorium.",
+		Long:  "logs based operations for Observatorium.",
+	}
+
+	cmd.AddCommand(NewLogsGetCmd(ctx))
+	cmd.AddCommand(NewLogsQueryCmd(ctx))
 
 	return cmd
 }

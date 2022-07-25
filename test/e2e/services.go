@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/efficientgo/e2e"
 	e2edb "github.com/efficientgo/e2e/db"
@@ -22,7 +23,7 @@ const (
 	lokiImage             = "grafana/loki:2.3.0"
 
 	logLevelError = "error"
-	// logLevelDebug = "debug"
+	logLevelDebug = "debug"
 )
 
 type apiOptions struct {
@@ -83,6 +84,12 @@ func newObservatoriumAPIService(
 
 	if opts.metricsRulesEndpoint != "" {
 		args = append(args, "--metrics.rules.endpoint="+"http://"+opts.metricsRulesEndpoint)
+	}
+
+	if opts.logsEndpoint != "" {
+		args = append(args, "--logs.read.endpoint="+opts.logsEndpoint)
+		args = append(args, "--logs.tail.endpoint="+opts.logsEndpoint)
+		args = append(args, "--logs.write.endpoint="+opts.logsEndpoint)
 	}
 
 	return e2e.NewInstrumentedRunnable(e, "observatorium_api").WithPorts(ports, "http-internal").Init(
@@ -221,6 +228,7 @@ func startServicesForLogs(t *testing.T, e e2e.Environment) (
 	logsEndpoint string,
 	// logsExtEndpoint string,
 ) {
+
 	loki := newLokiService(e)
 	testutil.Ok(t, e2e.StartAndWaitReady(loki))
 
@@ -280,6 +288,7 @@ func withRunParameters(params *runParams) upOption {
 func newUpRun(
 	env e2e.Environment,
 	name string,
+	tt string,
 	readEndpoint, writeEndpoint string,
 	options ...upOption,
 ) (e2e.InstrumentedRunnable, error) {
@@ -292,15 +301,21 @@ func newUpRun(
 		"http": 8888,
 	}
 
+	timeFn := func() string { return strconv.FormatInt(time.Now().UnixNano(), 10) }
+
 	args := e2e.BuildArgs(map[string]string{
 		"--listen":         "0.0.0.0:" + strconv.Itoa(ports["http"]),
-		"--endpoint-type":  "metrics",
+		"--endpoint-type":  tt,
 		"--endpoint-read":  readEndpoint,
 		"--endpoint-write": writeEndpoint,
 		"--log.level":      logLevelError,
 		"--name":           "observatorium_write",
 		"--labels":         "test=\"obsctl\"",
 	})
+
+	if tt == "logs" {
+		args = append(args, "--logs=[\""+timeFn()+"\",\"log line 1\"]")
+	}
 
 	if opts.token != "" {
 		args = append(args, "--token="+opts.token)

@@ -3,3 +3,5 @@ strategies:
 urls:
   self:
     issuer: http://docker.for.mac.localhost:4444/ 
+
+

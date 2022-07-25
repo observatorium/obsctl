@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	e2einteractive "github.com/efficientgo/e2e/interactive"
-
 	"github.com/efficientgo/e2e"
 	"github.com/efficientgo/tools/core/pkg/testutil"
 	"github.com/observatorium/obsctl/pkg/cmd"
@@ -51,6 +49,7 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 
 	createTenantsYAML(t, e, hydraURL, noOfTenants)
 	createRBACYAML(t, e, noOfTenants)
+	createLokiYAML(t, e)
 
 	read, write, rule := startServicesForMetrics(t, e, envName)
 	logsEndpoint := startServicesForLogs(t, e)
@@ -65,7 +64,7 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 	token := obtainToken(t, hydraURL, defaultTenant)
 
 	up, err := newUpRun(
-		e, "up-metrics-read-write",
+		e, "up-metrics-read-write", "metrics",
 		"http://"+api.InternalEndpoint("http")+"/api/metrics/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/api/v1/query",
 		"http://"+api.InternalEndpoint("http")+"/api/metrics/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/api/v1/receive",
 		withToken(token),
@@ -78,7 +77,7 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 	testutil.Ok(t, err)
 
 	up, err = newUpRun(
-		e, "up-logs-read-write",
+		e, "up-logs-read-write", "logs",
 		"https://"+api.InternalEndpoint("https")+"/api/logs/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/loki/api/v1/query",
 		"https://"+api.InternalEndpoint("https")+"/api/logs/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/loki/api/v1/push",
 		withToken(token),
@@ -95,7 +94,7 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 	fmt.Printf("Observatorium internal server on host machine: 	%s \n", api.Endpoint("http-internal"))
 	fmt.Printf("API Token: 					%s \n\n", token)
 
-	testutil.Ok(t, e2einteractive.RunUntilEndpointHit())
+	// testutil.Ok(t, e2einteractive.RunUntilEndpointHit())
 
 	time.Sleep(30 * time.Second) // Wait a bit for up to get some metrics in.
 

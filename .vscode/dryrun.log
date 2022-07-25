@@ -1,0 +1,7 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory `/Users/nyza/obsctl'
+# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+echo "(re)installing /Users/nyza/go/bin/faillint-v1.8.0"
+cd .bingo/ && /usr/local/bin/go build -mod=mod -modfile=faillint.mod -o=/Users/nyza/go/bin/faillint-v1.8.0 "github.com/fatih/faillint"
+make: Leaving directory `/Users/nyza/obsctl'
+ 
