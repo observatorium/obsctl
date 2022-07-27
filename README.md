@@ -249,6 +249,85 @@ Global Flags:
 
 To execute a range query you can use the `--range` flag and provide the required options alongside the query.
 
+
+### Logs
+
+You can use `obsctl logs` to get/set logs-based resources.
+
+```bash mdox-exec="obsctl logs --help"
+logs based operations for Observatorium.
+
+Usage:
+  obsctl logs [command]
+
+Available Commands:
+  get         Read series, labels & rules (JSON/YAML) of a tenant.
+  query       Query logs for a tenant.
+
+
+Flags:
+  -h, --help   help for logs
+
+Global Flags:
+      --log.format string   Log format to use. (default "clilog")
+      --log.level string    Log filtering level. (default "info")
+
+Use "obsctl logs [command] --help" for more information about a command.
+```
+
+To view different types of resources use `obsctl logs get`.
+
+```bash mdox-exec="obsctl logs get --help"
+Read series, labels & rules (JSON/YAML) of a tenant.
+
+Usage:
+  obsctl logs get [command]
+
+Available Commands:
+  labels      Get labels of a tenant.
+  labelvalues Get label values of a tenant.
+  series      Get series of a tenant.
+
+Flags:
+  -h, --help   help for get
+
+Global Flags:
+      --log.format string   Log format to use. (default "clilog")
+      --log.level string    Log filtering level. (default "info")
+
+Use "obsctl logs get [command] --help" for more information about a command.
+```
+
+You can also execute a LogQL range or instant query and view the results as a JSON response using `obsctl logs query <LogQL>`.
+
+```bash mdox-exec="obsctl logs query --help"
+Query logs for a tenant. Can get results for both instant and range queries. Pass a single valid LogQL query to fetch results for.
+
+Usage:
+  obsctl logs query [flags]
+
+Examples:
+obsctl logs query -----
+
+Flags:
+  -e, --end string       End timestamp. Must be provided if --range is true.
+  -h, --help             help for query
+      --range            If true, query will be evaluated as a range query. See https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries.
+  -s, --start string     Start timestamp. Must be provided if --range is true.
+      --step string      Query resolution step width. Only used if --range is provided.
+      --time string      Evaluation timestamp. Only used if --range is false.
+      --limit string   The max number of entries to return. Only used if --range is false.
+      --direction string Determines the sort order of logs.. Only used if --range is false.
+      --interval string return entries at (or greater than) the specified interval,Only used if --range is provided.
+
+Global Flags:
+      --log.format string   Log format to use. (default "clilog")
+      --log.level string    Log filtering level. (default "info")
+```
+
+To execute a range query you can use the `--range` flag and provide the required options alongside the query.
+
+
 ## Future additons in obsctl
 - [ ] Add support for logging operations
 - [ ] Add support for tracing operations
