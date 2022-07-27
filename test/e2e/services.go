@@ -87,9 +87,9 @@ func newObservatoriumAPIService(
 	}
 
 	if opts.logsEndpoint != "" {
-		args = append(args, "--logs.read.endpoint="+opts.logsEndpoint)
-		args = append(args, "--logs.tail.endpoint="+opts.logsEndpoint)
-		args = append(args, "--logs.write.endpoint="+opts.logsEndpoint)
+		args = append(args, "--logs.read.endpoint="+"http://"+opts.logsEndpoint)
+		args = append(args, "--logs.tail.endpoint="+"http://"+opts.logsEndpoint)
+		args = append(args, "--logs.write.endpoint="+"http://"+opts.logsEndpoint)
 	}
 
 	return e2e.NewInstrumentedRunnable(e, "observatorium_api").WithPorts(ports, "http-internal").Init(
@@ -226,14 +226,12 @@ func startServicesForMetrics(t *testing.T, e e2e.Environment, envName string) (s
 
 func startServicesForLogs(t *testing.T, e e2e.Environment) (
 	logsEndpoint string,
-	// logsExtEndpoint string,
 ) {
 
 	loki := newLokiService(e)
 	testutil.Ok(t, e2e.StartAndWaitReady(loki))
 
 	return loki.InternalEndpoint("http")
-	// , loki.Endpoint("http")
 }
 
 func newLokiService(e e2e.Environment) e2e.InstrumentedRunnable {

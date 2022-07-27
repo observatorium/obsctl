@@ -78,10 +78,10 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 
 	up, err = newUpRun(
 		e, "up-logs-read-write", "logs",
-		"https://"+api.InternalEndpoint("https")+"/api/logs/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/loki/api/v1/query",
-		"https://"+api.InternalEndpoint("https")+"/api/logs/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/loki/api/v1/push",
+		"http://"+api.InternalEndpoint("http")+"/api/logs/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/loki/api/v1/query",
+		"http://"+api.InternalEndpoint("http")+"/api/logs/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/loki/api/v1/push",
 		withToken(token),
-		withRunParameters(&runParams{initialDelay: "100ms", period: "1s", threshold: "1", latency: "10s", duration: "0"}),
+		withRunParameters(&runParams{period: "500ms", threshold: "1", latency: "10s", duration: "0"}),
 	)
 
 	testutil.Ok(t, err)
@@ -90,7 +90,7 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 	fmt.Printf("\n")
 	fmt.Printf("You're all set up!\n")
 	fmt.Printf("========================================\n")
-	fmt.Printf("Observatorium API on host machine: 		%s \n", api.Endpoint("https"))
+	fmt.Printf("Observatorium API on host machine: 		%s \n", api.InternalEndpoint("http"))
 	fmt.Printf("Observatorium internal server on host machine: 	%s \n", api.Endpoint("http-internal"))
 	fmt.Printf("API Token: 					%s \n\n", token)
 
@@ -128,7 +128,6 @@ func TestObsctlMetricsCommands(t *testing.T) {
 }
 
 `
-
 		testutil.Equals(t, exp, string(got))
 	})
 
@@ -360,12 +359,9 @@ func TestObsctlLogsCommands(t *testing.T) {
 	"status": "success",
 	"data": [
 		"__name__",
-		"receive_replica",
-		"tenant_id",
 		"test"
 	]
 }
-
 `
 
 		testutil.Equals(t, exp, string(got))
@@ -391,7 +387,6 @@ func TestObsctlLogsCommands(t *testing.T) {
 }
 
 `
-
 		testutil.Equals(t, exp, string(got))
 	})
 
@@ -413,6 +408,8 @@ func TestObsctlLogsCommands(t *testing.T) {
 		assertResponse(t, string(got), "tenant_id")
 		assertResponse(t, string(got), "test")
 		assertResponse(t, string(got), "obsctl")
+		assertResponse(t, string(got), "receive_replica")
+
 	})
 
 	t.Run("query logs for a tenant", func(t *testing.T) {
@@ -431,7 +428,7 @@ func TestObsctlLogsCommands(t *testing.T) {
 		assertResponse(t, string(got), "tenant_id")
 		assertResponse(t, string(got), "test")
 		assertResponse(t, string(got), "obsctl")
-		assertResponse(t, string(got), "metric")
+		assertResponse(t, string(got), "logs")
 		assertResponse(t, string(got), "resultType")
 		assertResponse(t, string(got), "vector")
 	})

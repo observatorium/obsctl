@@ -73,6 +73,7 @@ roles:
   - write
   resources:
   - metrics
+  - logs
   tenants:`
 
 const rbacRoleYAMLTmpl = `
