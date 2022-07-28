@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -31,7 +33,22 @@ const (
 // Hydra is spun up externally via start_hydra.sh, as accessing it via docker network is difficult for obsctl.
 // Follows similar pattern as https://observatorium.io/docs/usage/getting-started.md/.
 // Also registers tenants in hydra.
-func preTest(t *testing.T) *e2e.DockerEnvironment {
+
+func hydra() *exec.Cmd {
+
+	cmd := exec.Command("/bin/sh", "start_hydra.sh")
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	return cmd
+
+}
+
+func preTest(t *testing.T) (*e2e.DockerEnvironment, *exec.Cmd) {
+
+	hydra := hydra()
+
 	e, err := e2e.NewDockerEnvironment(envName)
 	testutil.Ok(t, err)
 	t.Cleanup(e.Close)
@@ -87,22 +104,26 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 	testutil.Ok(t, err)
 	testutil.Ok(t, e2e.StartAndWaitReady(up))
 
-	fmt.Printf("\n")
-	fmt.Printf("You're all set up!\n")
-	fmt.Printf("========================================\n")
-	fmt.Printf("Observatorium API on host machine: 		%s \n", api.InternalEndpoint("http"))
-	fmt.Printf("Observatorium internal server on host machine: 	%s \n", api.Endpoint("http-internal"))
-	fmt.Printf("API Token: 					%s \n\n", token)
-
-	// testutil.Ok(t, e2einteractive.RunUntilEndpointHit())
-
 	time.Sleep(30 * time.Second) // Wait a bit for up to get some metrics in.
 
-	return e
+	return e, hydra
+
+}
+
+func kill(h *exec.Cmd) {
+	process := h
+
+	err := process.Process.Kill()
+
+	if err != nil {
+		log.Fatal(err)
+
+	}
 }
 
 func TestObsctlMetricsCommands(t *testing.T) {
-	e := preTest(t)
+
+	e, hydra := preTest(t)
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(e.SharedDir(), "obsctl", "config.json")))
 
 	t.Run("get labels for a tenant", func(t *testing.T) {
@@ -337,10 +358,12 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		assertResponse(t, string(got), "vector")
 	})
 
+	kill(hydra)
+
 }
 
 func TestObsctlLogsCommands(t *testing.T) {
-	e := preTest(t)
+	e, hydra := preTest(t)
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(e.SharedDir(), "obsctl", "config.json")))
 
 	t.Run("get labels for a tenant", func(t *testing.T) {
@@ -362,6 +385,7 @@ func TestObsctlLogsCommands(t *testing.T) {
 		"test"
 	]
 }
+
 `
 
 		testutil.Equals(t, exp, string(got))
@@ -432,5 +456,7 @@ func TestObsctlLogsCommands(t *testing.T) {
 		assertResponse(t, string(got), "resultType")
 		assertResponse(t, string(got), "vector")
 	})
+
+	kill(hydra)
 
 }
