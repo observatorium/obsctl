@@ -144,16 +144,15 @@ func NewLogsGetCmd(ctx context.Context) *cobra.Command {
 
 func NewLogsQueryCmd(ctx context.Context) *cobra.Command {
 	var (
-		isRange                     bool
-		time, start, end, direction string
-		limit                       float32
-		step, interval              interface{}
+		isRange                                     bool
+		time, start, end, direction, step, interval string
+		limit                                       float32
 	)
 	cmd := &cobra.Command{
 		Use:          "query",
-		Short:        "Query metrics for a tenant.",
-		Long:         "Query metrics for a tenant. Can get results for both instant and range queries. Pass a single valid PromQL query to fetch results for.",
-		Example:      `obsctl metrics query "prometheus_http_request_total"`,
+		Short:        "Query logs for a tenant.",
+		Long:         "Query logs for a tenant. Can get results for both instant and range queries. Pass a single valid LogQl query to fetch results for.",
+		Example:      `obsctl logs query "prometheus_http_request_total"`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -230,8 +229,8 @@ func NewLogsQueryCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().BoolVar(&isRange, "range", false, "If true, query will be evaluated as a range query. See https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries.")
 	cmd.Flags().StringVarP(&start, "start", "s", "", "Start timestamp. Must be provided if --range is true.")
 	cmd.Flags().StringVarP(&end, "end", "e", "", "End timestamp. Must be provided if --range is true.")
-	// cmd.Flags().StringVarP(&step, "step", "", "", "Query resolution step width. Only used if --range is provided.")
-	// cmd.Flags().StringVarP(&interval, "interval", "", "return entries at (or greater than) the specified interval,Only used if --range is provided.")
+	cmd.Flags().StringVar(&step, "step", "", "Query resolution step width. Only used if --range is provided.")
+	cmd.Flags().StringVar(&interval, "interval", "", "return entries at (or greater than) the specified interval,Only used if --range is provided.")
 
 	// // Common flags.
 	cmd.Flags().Float32Var(&limit, "limit", 100, "The max number of entries to return. Only used if --range is false.")
