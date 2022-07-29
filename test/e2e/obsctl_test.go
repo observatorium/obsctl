@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -30,24 +29,21 @@ const (
 // - Rule
 // - Minio, Rules Objstore, Rule Syncer
 // - Up
+// - loki
 // Hydra is spun up externally via start_hydra.sh, as accessing it via docker network is difficult for obsctl.
 // Follows similar pattern as https://observatorium.io/docs/usage/getting-started.md/.
 // Also registers tenants in hydra.
 
-func hydra() *exec.Cmd {
+func preTest(t *testing.T) *e2e.DockerEnvironment {
 
-	cmd := exec.Command("/bin/sh", "start_hydra.sh")
-	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
-	}
+	dir, err := os.Getwd()
+	testutil.Ok(t, err)
 
-	return cmd
+	cmd := exec.Command("/bin/sh", dir+"/start_hydra.sh")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
-}
-
-func preTest(t *testing.T) (*e2e.DockerEnvironment, *exec.Cmd) {
-
-	hydra := hydra()
+	testutil.Ok(t, cmd.Run())
 
 	e, err := e2e.NewDockerEnvironment(envName)
 	testutil.Ok(t, err)
@@ -106,24 +102,13 @@ func preTest(t *testing.T) (*e2e.DockerEnvironment, *exec.Cmd) {
 
 	time.Sleep(30 * time.Second) // Wait a bit for up to get some metrics in.
 
-	return e, hydra
+	return e
 
-}
-
-func kill(h *exec.Cmd) {
-	process := h
-
-	err := process.Process.Kill()
-
-	if err != nil {
-		log.Fatal(err)
-
-	}
 }
 
 func TestObsctlMetricsCommands(t *testing.T) {
 
-	e, hydra := preTest(t)
+	e := preTest(t)
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(e.SharedDir(), "obsctl", "config.json")))
 
 	t.Run("get labels for a tenant", func(t *testing.T) {
@@ -358,12 +343,28 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		assertResponse(t, string(got), "vector")
 	})
 
-	kill(hydra)
+	// t.Cleanup(func() {
+	// 	// p := strconv.Itoa(pid)
+	// 	c := exec.Command("kill", "-9", "`pgrep hydra`")
+	// 	var out bytes.Buffer
+	// 	var stderr bytes.Buffer
+	// 	c.Stdout = &out
+	// 	c.Stderr = &stderr
+	// 	err := c.Run()
+	// 	if err != nil {
+	// 		fmt.Println("before: " + out.String())
+	// 		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
+	// 		log.Fatal(err)
+	// 	}
+	// 	fmt.Println("Result: " + out.String())
+	// 	fmt.Printf("clea  up metrics %s", err)
+	// })
 
 }
 
 func TestObsctlLogsCommands(t *testing.T) {
-	e, hydra := preTest(t)
+
+	e := preTest(t)
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(e.SharedDir(), "obsctl", "config.json")))
 
 	t.Run("get labels for a tenant", func(t *testing.T) {
@@ -442,21 +443,25 @@ func TestObsctlLogsCommands(t *testing.T) {
 		contextCmd := cmd.NewObsctlCmd(context.Background())
 
 		contextCmd.SetOut(b)
-		contextCmd.SetArgs([]string{"logs", "query", "observatorium_write{test=\"obsctl\"}"})
+		contextCmd.SetArgs([]string{"logs", "query", "{test=\"obsctl\"}"})
 		testutil.Ok(t, contextCmd.Execute())
 
 		got, err := ioutil.ReadAll(b)
 		testutil.Ok(t, err)
 
 		assertResponse(t, string(got), "observatorium_write")
-		assertResponse(t, string(got), "tenant_id")
+		assertResponse(t, string(got), "__name__")
+		assertResponse(t, string(got), "log line 1")
 		assertResponse(t, string(got), "test")
 		assertResponse(t, string(got), "obsctl")
-		assertResponse(t, string(got), "logs")
+		assertResponse(t, string(got), "stream")
+		assertResponse(t, string(got), "values")
 		assertResponse(t, string(got), "resultType")
-		assertResponse(t, string(got), "vector")
+		assertResponse(t, string(got), "streams")
 	})
 
-	kill(hydra)
-
+	// t.Cleanup(func() {
+	// 	c := exec.Command("kill", "-9", "`pgrep hydra`")
+	// 	c.Run()
+	// })
 }

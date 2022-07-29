@@ -23,15 +23,14 @@ esac
 
 WD="$(pwd)"
 gethydra() {
-    mkdir -p $WD/test/e2e/tmp/bin
+    mkdir -p mkdir -p $WD/tmp/bin
     echo "-------------------------------------------"
     echo "- Downloading ORY Hydra...  -"
     echo "-------------------------------------------"
-    curl -L "https://github.com/ory/hydra/releases/download/v1.9.1/hydra_1.9.1-sqlite_${HYDRA_OS}_64bit.tar.gz" | tar -xzf - -C $WD/test/e2e/tmp/bin hydra
+    curl -L "https://github.com/ory/hydra/releases/download/v1.9.1/hydra_1.9.1-sqlite_${HYDRA_OS}_64bit.tar.gz" | tar -xzf - -C $WD/tmp/bin hydra
 }
-
 startHydra() {
-    (DSN=memory $WD/test/e2e/tmp/bin/hydra serve all --dangerous-force-http --config $WD/test/e2e/$HYDRA_CONFIG &>/dev/null) &
+    (DSN=memory $WD/tmp/bin/hydra serve all --dangerous-force-http --config $WD/$HYDRA_CONFIG &>/dev/null) &
     echo "-------------------------------------------"
     echo "- Waiting for Hydra to come up...  -"
     echo "-------------------------------------------"
@@ -44,3 +43,4 @@ startHydra() {
 
 gethydra
 startHydra
+exit 0

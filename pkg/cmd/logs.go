@@ -234,7 +234,7 @@ func NewLogsQueryCmd(ctx context.Context) *cobra.Command {
 	// cmd.Flags().StringVarP(&interval, "interval", "", "return entries at (or greater than) the specified interval,Only used if --range is provided.")
 
 	// // Common flags.
-	// cmd.Flags().StringVarP(&limit, "limit", "", "The max number of entries to return. Only used if --range is false.", " ")
+	cmd.Flags().Float32Var(&limit, "limit", 100, "The max number of entries to return. Only used if --range is false.")
 	cmd.Flags().StringVar(&direction, "direction", "", "Determines the sort order of logs.. Only used if --range is false.")
 
 	return cmd

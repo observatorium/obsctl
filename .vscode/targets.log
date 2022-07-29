@@ -8,7 +8,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This program built for i386-apple-darwin11.3.0
  
 
-# Make data base, printed on Mon Jul 25 08:34:49 2022
+# Make data base, printed on Thu Jul 28 07:47:29 2022
 
 # Variables
 
@@ -56,7 +56,7 @@ VSCODE_VERBOSE_LOGGING = true
 # environment
 __CFBundleIdentifier = com.microsoft.VSCode
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /var/folders/jm/g6zkfbzn6fzgdjkqk92b5xqc0000gn/T/vscode-ipc-872700f4-9fe3-4499-a273-adcd1b3eef97.sock
+VSCODE_IPC_HOOK_EXTHOST = /var/folders/jm/g6zkfbzn6fzgdjkqk92b5xqc0000gn/T/vscode-ipc-afee0c3d-cb07-499f-ba4a-1dbcf783c230.sock
 # environment
 VSCODE_CWD = /
 # environment
@@ -78,7 +78,7 @@ ELECTRON_RUN_AS_NODE = 1
 # makefile (from `.bingo/Variables.mk', line 44)
 MISSPELL := /Users/nyza/go/bin/misspell-v0.3.4
 # environment
-SSH_AUTH_SOCK = /private/tmp/com.apple.launchd.tafoYmXCYU/Listeners
+SSH_AUTH_SOCK = /private/tmp/com.apple.launchd.2EQNciSNcs/Listeners
 # automatic
 %F = $(notdir $%)
 # makefile (from `.bingo/Variables.mk', line 5)
@@ -178,7 +178,7 @@ MAKELEVEL := 0
 # environment
 LANG = C
 # environment
-VSCODE_PID = 973
+VSCODE_PID = 1082
 # variable set hash-table stats:
 # Load=80/1024=8%, Rehash=0, Collisions=10/152=7%
 
@@ -188,7 +188,7 @@ VSCODE_PID = 973
 
 # Directories
 
-# . (device 16777224, inode 3704314): 23 files, no impossibilities.
+# . (device 16777220, inode 3704314): 23 files, no impossibilities.
 
 # 23 files, no impossibilities in 1 directories.
 
@@ -295,6 +295,7 @@ format: /Users/nyza/go/bin/goimports-v0.1.7
 # automatic
 # ? := /Users/nyza/go/bin/goimports-v0.1.7
 # variable set hash-table stats:
+ 
 # Load=8/32=25%, Rehash=0, Collisions=3/14=21%
 #  commands to execute (from `Makefile', line 70):
 	@echo ">> formatting code"
@@ -304,7 +305,7 @@ format: /Users/nyza/go/bin/goimports-v0.1.7
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-21 11:57:53
+#  Last modified 2022-07-28 07:22:23
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -403,9 +404,9 @@ test-e2e:
 #  commands to execute (from `Makefile', line 108):
 	@rm -rf ./test/e2e/e2e_*
 	@rm -rf ./test/e2e/tmp
-	@./test/e2e/start_hydra.sh
+	# @./test/e2e/start_hydra.sh
 	@go test -v -timeout 99m github.com/observatorium/obsctl/test/e2e
-	@kill -9 `pgrep hydra`
+	# @kill -9 `pgrep hydra`
 	
 
 /Users/nyza/go/bin/goimports-v0.1.7: .bingo//goimports.mod
@@ -445,6 +446,7 @@ lint: /Users/nyza/go/bin/faillint-v1.8.0 /Users/nyza/go/bin/golangci-lint-v1.44.
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
+ 
 #  commands to execute (from `Makefile', line 96):
 	$(call require_clean_work_tree,"detected not clean master before running lint")
 	@echo ">> verifying modules being imported"
@@ -480,6 +482,6 @@ lint: /Users/nyza/go/bin/faillint-v1.8.0 /Users/nyza/go/bin/golangci-lint-v1.44.
 # strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
 # strcache free: total = 4067 / max = 4067 / min = 4067 / avg = 4067
 
-# Finished Make data base on Mon Jul 25 08:34:49 2022
+# Finished Make data base on Thu Jul 28 07:47:29 2022
 
  
