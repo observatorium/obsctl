@@ -343,22 +343,18 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		assertResponse(t, string(got), "vector")
 	})
 
-	// t.Cleanup(func() {
-	// 	// p := strconv.Itoa(pid)
-	// 	c := exec.Command("kill", "-9", "`pgrep hydra`")
-	// 	var out bytes.Buffer
-	// 	var stderr bytes.Buffer
-	// 	c.Stdout = &out
-	// 	c.Stderr = &stderr
-	// 	err := c.Run()
-	// 	if err != nil {
-	// 		fmt.Println("before: " + out.String())
-	// 		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-	// 		log.Fatal(err)
-	// 	}
-	// 	fmt.Println("Result: " + out.String())
-	// 	fmt.Printf("clea  up metrics %s", err)
-	// })
+	t.Cleanup(func() {
+
+		dir, err := os.Getwd()
+		testutil.Ok(t, err)
+
+		cmd := exec.Command("/bin/sh", dir+"/kill_hydra.sh")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		testutil.Ok(t, cmd.Run())
+
+	})
 
 }
 
@@ -460,8 +456,17 @@ func TestObsctlLogsCommands(t *testing.T) {
 		assertResponse(t, string(got), "streams")
 	})
 
-	// t.Cleanup(func() {
-	// 	c := exec.Command("kill", "-9", "`pgrep hydra`")
-	// 	c.Run()
-	// })
+	t.Cleanup(func() {
+
+		dir, err := os.Getwd()
+		testutil.Ok(t, err)
+
+		cmd := exec.Command("/bin/sh", dir+"/kill_hydra.sh")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		testutil.Ok(t, cmd.Run())
+
+	})
+
 }
