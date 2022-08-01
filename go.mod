@@ -6,10 +6,10 @@ require (
 	github.com/bwplotka/mdox v0.9.0
 	github.com/coreos/go-oidc/v3 v3.2.0
 	github.com/efficientgo/e2e v0.12.1
-	github.com/efficientgo/tools/core v0.0.0-20220225185207-fe763185946b
+	github.com/efficientgo/tools/core v0.0.0-20220801101838-3312908f6a9d
 	github.com/go-kit/log v0.2.1
 	github.com/google/uuid v1.3.0
-	github.com/observatorium/api v0.1.3-0.20220720173105-1afc5195b681
+	github.com/observatorium/api v0.1.3-0.20220729164029-13636c950bd8
 	github.com/oklog/run v1.1.0
 	github.com/spf13/cobra v1.5.0
 	golang.org/x/oauth2 v0.0.0-20220722155238-128564f6959c

@@ -261,7 +261,7 @@ Usage:
 
 Available Commands:
   get         Read series, labels & labels values (JSON/YAML) of a tenant.
-  query       Query metrics for a tenant.
+  query       Query logs for a tenant.
 
 Flags:
   -h, --help   help for logs
@@ -299,21 +299,23 @@ Use "obsctl logs get [command] --help" for more information about a command.
 You can also execute a LogQL range or instant query and view the results as a JSON response using `obsctl logs query <LogQL>`.
 
 ```bash mdox-exec="obsctl logs query --help"
-Query metrics for a tenant. Can get results for both instant and range queries. Pass a single valid PromQL query to fetch results for.
+Query logs for a tenant. Can get results for both instant and range queries. Pass a single valid LogQl query to fetch results for.
 
 Usage:
   obsctl logs query [flags]
 
 Examples:
-obsctl metrics query "prometheus_http_request_total"
+obsctl logs query "prometheus_http_request_total"
 
 Flags:
       --direction string   Determines the sort order of logs.. Only used if --range is false.
   -e, --end string         End timestamp. Must be provided if --range is true.
   -h, --help               help for query
+      --interval string    return entries at (or greater than) the specified interval,Only used if --range is provided.
       --limit float32      The max number of entries to return. Only used if --range is false. (default 100)
       --range              If true, query will be evaluated as a range query. See https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries.
   -s, --start string       Start timestamp. Must be provided if --range is true.
+      --step string        Query resolution step width. Only used if --range is provided.
       --time string        Evaluation timestamp. Only used if --range is false.
 
 Global Flags:
