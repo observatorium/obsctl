@@ -23,7 +23,6 @@ const (
 	lokiImage             = "grafana/loki:2.3.0"
 
 	logLevelError = "error"
-	logLevelDebug = "debug"
 )
 
 type apiOptions struct {
