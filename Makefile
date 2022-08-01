@@ -108,4 +108,3 @@ test-e2e:
 	@rm -rf ./test/e2e/e2e_*
 	@rm -rf ./test/e2e/tmp
 	@go test -v -timeout 99m github.com/observatorium/obsctl/test/e2e
-	@kill -9 `pgrep hydra`
