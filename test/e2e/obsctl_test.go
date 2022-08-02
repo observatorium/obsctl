@@ -39,7 +39,7 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 	dir, err := os.Getwd()
 	testutil.Ok(t, err)
 
-	cmd := exec.Command("/bin/sh", dir+"/start_hydra.sh")
+	cmd := exec.Command("/bin/bash", dir+"/start_hydra.sh")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -348,7 +348,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		dir, err := os.Getwd()
 		testutil.Ok(t, err)
 
-		cmd := exec.Command("/bin/sh", dir+"/kill_hydra.sh")
+		cmd := exec.Command("/bin/bash", dir+"/kill_hydra.sh")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
@@ -461,7 +461,7 @@ func TestObsctlLogsCommands(t *testing.T) {
 		dir, err := os.Getwd()
 		testutil.Ok(t, err)
 
-		cmd := exec.Command("/bin/sh", dir+"/kill_hydra.sh")
+		cmd := exec.Command("/bin/bash", dir+"/kill_hydra.sh")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
