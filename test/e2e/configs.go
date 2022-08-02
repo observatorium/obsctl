@@ -73,6 +73,7 @@ roles:
   - write
   resources:
   - metrics
+  - logs
   tenants:`
 
 const rbacRoleYAMLTmpl = `
@@ -229,6 +230,67 @@ func createRulesYAML(
 
 	err := ioutil.WriteFile(
 		filepath.Join(e.SharedDir(), "obsctl", "rules.yaml"),
+		yamlContent,
+		os.FileMode(0755),
+	)
+
+	testutil.Ok(t, err)
+}
+
+const lokiYAML = `auth_enabled: true
+
+server:
+  http_listen_port: 3100
+
+ingester:
+  lifecycler:
+    address: 0.0.0.0
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+    final_sleep: 0s
+  chunk_idle_period: 5m
+  chunk_retain_period: 30s
+
+querier:
+  engine:
+    max_look_back_period: 5m
+    timeout: 3m
+
+schema_config:
+  configs:
+  - from: 2019-01-01
+    store: boltdb
+    object_store: filesystem
+    schema: v11
+    index:
+      prefix: index_
+      period: 168h
+
+storage_config:
+  boltdb:
+    directory: /tmp/loki/index
+
+  filesystem:
+    directory: /tmp/loki/chunks
+
+limits_config:
+  enforce_metric_name: false
+  reject_old_samples: false
+
+`
+
+func createLokiYAML(
+	t *testing.T,
+	e e2e.Environment,
+) {
+	yamlContent := []byte(fmt.Sprint(
+		lokiYAML,
+	))
+
+	err := ioutil.WriteFile(
+		filepath.Join(e.SharedDir(), "config", "loki.yml"),
 		yamlContent,
 		os.FileMode(0755),
 	)

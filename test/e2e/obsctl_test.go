@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -28,10 +29,22 @@ const (
 // - Rule
 // - Minio, Rules Objstore, Rule Syncer
 // - Up
+// - loki
 // Hydra is spun up externally via start_hydra.sh, as accessing it via docker network is difficult for obsctl.
 // Follows similar pattern as https://observatorium.io/docs/usage/getting-started.md/.
 // Also registers tenants in hydra.
+
 func preTest(t *testing.T) *e2e.DockerEnvironment {
+
+	dir, err := os.Getwd()
+	testutil.Ok(t, err)
+
+	cmd := exec.Command("/bin/bash", dir+"/start_hydra.sh")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	testutil.Ok(t, cmd.Run())
+
 	e, err := e2e.NewDockerEnvironment(envName)
 	testutil.Ok(t, err)
 	t.Cleanup(e.Close)
@@ -49,10 +62,12 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 
 	createTenantsYAML(t, e, hydraURL, noOfTenants)
 	createRBACYAML(t, e, noOfTenants)
+	createLokiYAML(t, e)
 
 	read, write, rule := startServicesForMetrics(t, e, envName)
+	logsEndpoint := startServicesForLogs(t, e)
 
-	api, err := newObservatoriumAPIService(e, withMetricsEndpoints(read, write), withRulesEndpoint(rule))
+	api, err := newObservatoriumAPIService(e, withMetricsEndpoints(read, write), withRulesEndpoint(rule), withLogsEndpoints(logsEndpoint))
 	testutil.Ok(t, err)
 	testutil.Ok(t, e2e.StartAndWaitReady(api))
 	testutil.Ok(t, os.MkdirAll(filepath.Join(e.SharedDir(), "obsctl"), 0750)) // Create config file beforehand.
@@ -62,7 +77,7 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 	token := obtainToken(t, hydraURL, defaultTenant)
 
 	up, err := newUpRun(
-		e, "up-metrics-read-write",
+		e, "up-metrics-read-write", "metrics",
 		"http://"+api.InternalEndpoint("http")+"/api/metrics/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/api/v1/query",
 		"http://"+api.InternalEndpoint("http")+"/api/metrics/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/api/v1/receive",
 		withToken(token),
@@ -74,12 +89,25 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 	testutil.Ok(t, e2e.StartAndWaitReady(up))
 	testutil.Ok(t, err)
 
+	up, err = newUpRun(
+		e, "up-logs-read-write", "logs",
+		"http://"+api.InternalEndpoint("http")+"/api/logs/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/loki/api/v1/query",
+		"http://"+api.InternalEndpoint("http")+"/api/logs/v1/test-oidc-"+fmt.Sprint(defaultTenant)+"/loki/api/v1/push",
+		withToken(token),
+		withRunParameters(&runParams{period: "500ms", threshold: "1", latency: "10s", duration: "0"}),
+	)
+
+	testutil.Ok(t, err)
+	testutil.Ok(t, e2e.StartAndWaitReady(up))
+
 	time.Sleep(30 * time.Second) // Wait a bit for up to get some metrics in.
 
 	return e
+
 }
 
 func TestObsctlMetricsCommands(t *testing.T) {
+
 	e := preTest(t)
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(e.SharedDir(), "obsctl", "config.json")))
 
@@ -106,7 +134,6 @@ func TestObsctlMetricsCommands(t *testing.T) {
 }
 
 `
-
 		testutil.Equals(t, exp, string(got))
 	})
 
@@ -314,6 +341,132 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		assertResponse(t, string(got), "metric")
 		assertResponse(t, string(got), "resultType")
 		assertResponse(t, string(got), "vector")
+	})
+
+	t.Cleanup(func() {
+
+		dir, err := os.Getwd()
+		testutil.Ok(t, err)
+
+		cmd := exec.Command("/bin/bash", dir+"/kill_hydra.sh")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		testutil.Ok(t, cmd.Run())
+
+	})
+
+}
+
+func TestObsctlLogsCommands(t *testing.T) {
+
+	e := preTest(t)
+	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(e.SharedDir(), "obsctl", "config.json")))
+
+	t.Run("get labels for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "get", "labels"})
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := ioutil.ReadAll(b)
+		testutil.Ok(t, err)
+
+		exp := `{
+	"status": "success",
+	"data": [
+		"__name__",
+		"test"
+	]
+}
+
+`
+
+		testutil.Equals(t, exp, string(got))
+	})
+
+	t.Run("get labelvalues for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "get", "labelvalues", "--name=test"})
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := ioutil.ReadAll(b)
+		testutil.Ok(t, err)
+
+		exp := `{
+	"status": "success",
+	"data": [
+		"obsctl"
+	]
+}
+
+`
+		testutil.Equals(t, exp, string(got))
+	})
+
+	t.Run("get series for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "get", "series", "--match", "observatorium_write"})
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := ioutil.ReadAll(b)
+		testutil.Ok(t, err)
+
+		// Using assertResponse here as we cannot know exact tenant_id.
+		// As this is response from Query /api/v1/series, it should contain label of series written by up.
+		assertResponse(t, string(got), "observatorium_write")
+		assertResponse(t, string(got), "tenant_id")
+		assertResponse(t, string(got), "test")
+		assertResponse(t, string(got), "obsctl")
+		assertResponse(t, string(got), "receive_replica")
+
+	})
+
+	t.Run("query logs for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "query", "{test=\"obsctl\"}"})
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := ioutil.ReadAll(b)
+		testutil.Ok(t, err)
+
+		assertResponse(t, string(got), "observatorium_write")
+		assertResponse(t, string(got), "__name__")
+		assertResponse(t, string(got), "log line 1")
+		assertResponse(t, string(got), "test")
+		assertResponse(t, string(got), "obsctl")
+		assertResponse(t, string(got), "stream")
+		assertResponse(t, string(got), "values")
+		assertResponse(t, string(got), "resultType")
+		assertResponse(t, string(got), "streams")
+	})
+
+	t.Cleanup(func() {
+
+		dir, err := os.Getwd()
+		testutil.Ok(t, err)
+
+		cmd := exec.Command("/bin/bash", dir+"/kill_hydra.sh")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		testutil.Ok(t, cmd.Run())
+
 	})
 
 }

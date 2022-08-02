@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/efficientgo/e2e"
 	e2edb "github.com/efficientgo/e2e/db"
@@ -19,15 +20,16 @@ const (
 	thanosImage           = "quay.io/thanos/thanos:v0.25.1"
 	thanosRuleSyncerImage = "quay.io/observatorium/thanos-rule-syncer:main-2022-02-01-d4c24bc"
 	rulesObjectStoreImage = "quay.io/observatorium/rules-objstore:main-2022-01-19-8650540"
+	lokiImage             = "grafana/loki:2.3.0"
 
 	logLevelError = "error"
-	// logLevelDebug = "debug"
 )
 
 type apiOptions struct {
 	metricsReadEndpoint  string
 	metricsWriteEndpoint string
 	metricsRulesEndpoint string
+	logsEndpoint         string
 }
 
 type apiOption func(*apiOptions)
@@ -42,6 +44,12 @@ func withMetricsEndpoints(readEndpoint string, writeEndpoint string) apiOption {
 func withRulesEndpoint(rulesEndpoint string) apiOption {
 	return func(o *apiOptions) {
 		o.metricsRulesEndpoint = rulesEndpoint
+	}
+}
+
+func withLogsEndpoints(endpoint string) apiOption {
+	return func(o *apiOptions) {
+		o.logsEndpoint = endpoint
 	}
 }
 
@@ -75,6 +83,12 @@ func newObservatoriumAPIService(
 
 	if opts.metricsRulesEndpoint != "" {
 		args = append(args, "--metrics.rules.endpoint="+"http://"+opts.metricsRulesEndpoint)
+	}
+
+	if opts.logsEndpoint != "" {
+		args = append(args, "--logs.read.endpoint="+"http://"+opts.logsEndpoint)
+		args = append(args, "--logs.tail.endpoint="+"http://"+opts.logsEndpoint)
+		args = append(args, "--logs.write.endpoint="+"http://"+opts.logsEndpoint)
 	}
 
 	return e2e.NewInstrumentedRunnable(e, "observatorium_api").WithPorts(ports, "http-internal").Init(
@@ -209,6 +223,38 @@ func startServicesForMetrics(t *testing.T, e e2e.Environment, envName string) (s
 		rulesObjstore.InternalEndpoint("http")
 }
 
+func startServicesForLogs(t *testing.T, e e2e.Environment) (
+	logsEndpoint string,
+) {
+
+	loki := newLokiService(e)
+	testutil.Ok(t, e2e.StartAndWaitReady(loki))
+
+	return loki.InternalEndpoint("http")
+}
+
+func newLokiService(e e2e.Environment) e2e.InstrumentedRunnable {
+	ports := map[string]int{"http": 3100}
+
+	args := e2e.BuildArgs(map[string]string{
+		"-config.file": filepath.Join("/shared/config", "loki.yml"),
+		"-target":      "all",
+		"-log.level":   logLevelError,
+	})
+
+	return e2e.NewInstrumentedRunnable(e, "loki").WithPorts(ports, "http").Init(
+		e2e.StartOptions{
+			Image:   lokiImage,
+			Command: e2e.NewCommandWithoutEntrypoint("loki", args...),
+			// It takes ~1m before Loki's ingester starts reporting 200,
+			// but it does not seem to affect tests, therefore we accept
+			// 503 here as well to save time.
+			Readiness: e2e.NewHTTPReadinessProbe("http", "/ready", 200, 503),
+			User:      strconv.Itoa(os.Getuid()),
+		},
+	)
+}
+
 type runParams struct {
 	initialDelay string
 	period       string
@@ -239,6 +285,7 @@ func withRunParameters(params *runParams) upOption {
 func newUpRun(
 	env e2e.Environment,
 	name string,
+	tt string,
 	readEndpoint, writeEndpoint string,
 	options ...upOption,
 ) (e2e.InstrumentedRunnable, error) {
@@ -251,15 +298,21 @@ func newUpRun(
 		"http": 8888,
 	}
 
+	timeFn := func() string { return strconv.FormatInt(time.Now().UnixNano(), 10) }
+
 	args := e2e.BuildArgs(map[string]string{
 		"--listen":         "0.0.0.0:" + strconv.Itoa(ports["http"]),
-		"--endpoint-type":  "metrics",
+		"--endpoint-type":  tt,
 		"--endpoint-read":  readEndpoint,
 		"--endpoint-write": writeEndpoint,
 		"--log.level":      logLevelError,
 		"--name":           "observatorium_write",
 		"--labels":         "test=\"obsctl\"",
 	})
+
+	if tt == "logs" {
+		args = append(args, "--logs=[\""+timeFn()+"\",\"log line 1\"]")
+	}
 
 	if opts.token != "" {
 		args = append(args, "--token="+opts.token)

@@ -287,7 +287,7 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 				return fmt.Errorf("custom fetcher: %w", err)
 			}
 
-			query := parameters.Query(args[0])
+			query := parameters.PromqlQuery(args[0])
 
 			if isRange {
 				params := &client.GetRangeQueryParams{Query: &query}
