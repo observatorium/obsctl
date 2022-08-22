@@ -25,6 +25,5 @@ func main() {
 
 	if err := g.Run(); err != nil {
 		os.Exit(1)
-
 	}
 }

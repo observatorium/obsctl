@@ -3,13 +3,16 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"time"
 
+	"github.com/go-kit/log/level"
 	"github.com/observatorium/api/client"
 	"github.com/observatorium/api/client/parameters"
 	"github.com/observatorium/obsctl/pkg/fetcher"
+	"github.com/observatorium/obsctl/pkg/proxy"
 	"github.com/spf13/cobra"
 )
 
@@ -358,6 +361,44 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
+func NewMetricsUICmd(ctx context.Context) *cobra.Command {
+	var listen string
+	cmd := &cobra.Command{
+		Use:   "ui",
+		Short: "Starts a proxy server and opens a Thanos Query UI for making requests to Observatorium API as a tenant.",
+		Long: `Starts a proxy server and opens a Thanos Query UI for making requests to Observatorium API as a tenant. 
+		Note that all request URLs will have /api/metrics/v1/ prefixed in their paths.`,
+		SilenceUsage: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Run a server as we would in main.
+			s, err := proxy.NewProxyServer(ctx, logger, "metrics", listen)
+			if err != nil {
+				return err
+			}
+
+			go func() {
+				level.Info(logger).Log("msg", "starting ui proxy server", "addr", listen)
+
+				if err = s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+					level.Error(logger).Log("msg", "failed to start proxy server", "error", err)
+				}
+			}()
+
+			// Open Querier UI in browser.
+			if err := openInBrowser("http://localhost" + listen); err != nil {
+				return err
+			}
+
+			<-ctx.Done()
+			return s.Shutdown(context.Background())
+		},
+	}
+
+	cmd.Flags().StringVar(&listen, "listen", ":8080", "Address for proxy server to listen on.")
+
+	return cmd
+}
+
 func NewMetricsCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "metrics",
@@ -368,6 +409,7 @@ func NewMetricsCmd(ctx context.Context) *cobra.Command {
 	cmd.AddCommand(NewMetricsGetCmd(ctx))
 	cmd.AddCommand(NewMetricsSetCmd(ctx))
 	cmd.AddCommand(NewMetricsQueryCmd(ctx))
+	cmd.AddCommand(NewMetricsUICmd(ctx))
 
 	return cmd
 }

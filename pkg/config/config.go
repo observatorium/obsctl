@@ -130,6 +130,55 @@ func (t *TenantConfig) Client(ctx context.Context, logger log.Logger) (*http.Cli
 	return http.DefaultClient, nil
 }
 
+// Tenant returns a OAuth2 HTTP transport based on the configuration for a tenant.
+func (t *TenantConfig) Transport(ctx context.Context, logger log.Logger) (http.RoundTripper, error) {
+	if t.OIDC != nil {
+		provider, err := oidc.NewProvider(ctx, t.OIDC.IssuerURL)
+		if err != nil {
+			return nil, fmt.Errorf("constructing oidc provider: %w", err)
+		}
+
+		ccc := clientcredentials.Config{
+			ClientID:     t.OIDC.ClientID,
+			ClientSecret: t.OIDC.ClientSecret,
+			TokenURL:     provider.Endpoint().TokenURL,
+			Scopes:       []string{"openid", "offline_access"},
+		}
+
+		if t.OIDC.Audience != "" {
+			ccc.EndpointParams = url.Values{
+				"audience": []string{t.OIDC.Audience},
+			}
+		}
+
+		ts := ccc.TokenSource(ctx)
+
+		// If token has not expired, we can reuse.
+		if t.OIDC.Token != nil {
+			currentTime := time.Now()
+			if t.OIDC.Token.Expiry.After(currentTime) {
+				ts = oauth2.ReuseTokenSource(t.OIDC.Token, ts)
+			}
+		}
+
+		tkn, err := ts.Token()
+		if err != nil {
+			return nil, fmt.Errorf("fetching token: %w", err)
+		}
+
+		t.OIDC.Token = tkn
+
+		level.Debug(logger).Log("msg", "fetched token", "tenant", t.Tenant)
+
+		return &oauth2.Transport{
+			Source: ts,
+			Base:   http.DefaultTransport,
+		}, nil
+	}
+
+	return http.DefaultTransport, nil
+}
+
 // Client returns an OAuth2 HTTP client based on the current context configuration.
 func (c *Config) Client(ctx context.Context, logger log.Logger) (*http.Client, error) {
 	tenant, _, err := c.GetCurrentContext()
@@ -150,6 +199,28 @@ func (c *Config) Client(ctx context.Context, logger log.Logger) (*http.Client, e
 	level.Debug(logger).Log("msg", "updated token in config file", "tenant", tenant.Tenant)
 
 	return client, nil
+}
+
+// Transport returns an OAuth2 HTTP transport based on the current context configuration.
+func (c *Config) Transport(ctx context.Context, logger log.Logger) (http.RoundTripper, error) {
+	tenant, _, err := c.GetCurrentContext()
+	if err != nil {
+		return nil, fmt.Errorf("getting current context: %w", err)
+	}
+
+	transport, err := tenant.Transport(ctx, logger)
+	if err != nil {
+		return nil, err
+	}
+
+	c.APIs[c.Current.API].Contexts[c.Current.Tenant] = tenant
+	if err := c.Save(logger); err != nil {
+		return nil, fmt.Errorf("updating token in config file: %w", err)
+	}
+
+	level.Debug(logger).Log("msg", "updated token in config file", "tenant", tenant.Tenant)
+
+	return transport, nil
 }
 
 // Read loads configuration from disk.
