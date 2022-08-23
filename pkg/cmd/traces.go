@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/url"
 
 	"github.com/go-kit/log/level"
@@ -46,7 +46,7 @@ func NewTraceServicesCmd(ctx context.Context) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("getting: %w", err)
 			}
-			bodyBytes, err := ioutil.ReadAll(resp.Body)
+			bodyBytes, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return fmt.Errorf("getting: %w", err)
 			}

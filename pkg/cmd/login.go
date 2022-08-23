@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/observatorium/obsctl/pkg/config"
 	"github.com/spf13/cobra"
@@ -20,7 +20,7 @@ func NewLoginCmd(ctx context.Context) *cobra.Command {
 		Long:  "Login as a tenant. Will also save tenant details locally.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if caFilePath != "" {
-				body, err := ioutil.ReadFile(caFilePath)
+				body, err := os.ReadFile(caFilePath)
 				if err != nil {
 					return err
 				}

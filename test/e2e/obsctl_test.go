@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -120,7 +120,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		contextCmd.SetArgs([]string{"metrics", "get", "labels"})
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		exp := `{
@@ -146,7 +146,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		contextCmd.SetArgs([]string{"metrics", "get", "labels", "--match=observatorium_write"})
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		// The response is the same with matcher too, as we have only one series with these exact labes
@@ -174,7 +174,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		contextCmd.SetArgs([]string{"metrics", "get", "labelvalues", "--name=test"})
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		exp := `{
@@ -198,7 +198,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		contextCmd.SetArgs([]string{"metrics", "get", "rules"})
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		exp := `{
@@ -222,7 +222,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		contextCmd.SetArgs([]string{"metrics", "get", "rules.raw"})
 		testutil.NotOk(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		assertResponse(t, string(got), "no rules found")
@@ -237,7 +237,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		contextCmd.SetArgs([]string{"metrics", "set", "--rule.file=" + filepath.Join(e.SharedDir(), "obsctl", "rules.yaml")})
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		exp := "successfully updated rules file\n"
@@ -254,7 +254,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		contextCmd.SetArgs([]string{"metrics", "get", "rules.raw"})
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		// Using assertResponse here as we cannot know exact tenant_id.
@@ -274,7 +274,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		// Using assertResponse here as we cannot know exact tenant_id.
@@ -294,7 +294,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		notAssertResponse(t, string(got), "TestFiringAlert")
@@ -311,7 +311,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		contextCmd.SetArgs([]string{"metrics", "get", "series", "--match", "observatorium_write"})
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		// Using assertResponse here as we cannot know exact tenant_id.
@@ -331,7 +331,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		contextCmd.SetArgs([]string{"metrics", "query", "observatorium_write{test=\"obsctl\"}"})
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		assertResponse(t, string(got), "observatorium_write")
@@ -372,7 +372,7 @@ func TestObsctlLogsCommands(t *testing.T) {
 		contextCmd.SetArgs([]string{"logs", "get", "labels"})
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		exp := `{
@@ -397,7 +397,7 @@ func TestObsctlLogsCommands(t *testing.T) {
 		contextCmd.SetArgs([]string{"logs", "get", "labelvalues", "--name=test"})
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		exp := `{
@@ -420,7 +420,7 @@ func TestObsctlLogsCommands(t *testing.T) {
 		contextCmd.SetArgs([]string{"logs", "get", "series", "--match", "observatorium_write"})
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		// Using assertResponse here as we cannot know exact tenant_id.
@@ -442,7 +442,7 @@ func TestObsctlLogsCommands(t *testing.T) {
 		contextCmd.SetArgs([]string{"logs", "query", "{test=\"obsctl\"}"})
 		testutil.Ok(t, contextCmd.Execute())
 
-		got, err := ioutil.ReadAll(b)
+		got, err := io.ReadAll(b)
 		testutil.Ok(t, err)
 
 		assertResponse(t, string(got), "observatorium_write")
