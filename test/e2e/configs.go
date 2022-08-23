@@ -3,7 +3,6 @@ package e2e
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -46,7 +45,7 @@ func createTenantsYAML(
 
 	}
 
-	err := ioutil.WriteFile(
+	err := os.WriteFile(
 		filepath.Join(e.SharedDir(), "config", "tenants.yaml"),
 		yamlContent,
 		os.FileMode(0755),
@@ -106,7 +105,7 @@ func createRBACYAML(
 		)...)
 	}
 
-	err := ioutil.WriteFile(
+	err := os.WriteFile(
 		filepath.Join(e.SharedDir(), "config", "rbac.yaml"),
 		yamlContent,
 		os.FileMode(0755),
@@ -138,7 +137,7 @@ func createRulesObjstoreYAML(
 		secretKey,
 	))
 
-	err := ioutil.WriteFile(
+	err := os.WriteFile(
 		filepath.Join(e.SharedDir(), "config", "rules-objstore.yaml"),
 		yamlContent,
 		os.FileMode(0755),
@@ -228,7 +227,7 @@ func createRulesYAML(
 		ruleYAML,
 	))
 
-	err := ioutil.WriteFile(
+	err := os.WriteFile(
 		filepath.Join(e.SharedDir(), "obsctl", "rules.yaml"),
 		yamlContent,
 		os.FileMode(0755),
@@ -289,7 +288,7 @@ func createLokiYAML(
 		lokiYAML,
 	))
 
-	err := ioutil.WriteFile(
+	err := os.WriteFile(
 		filepath.Join(e.SharedDir(), "config", "loki.yml"),
 		yamlContent,
 		os.FileMode(0755),

@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,11 +13,10 @@ import (
 )
 
 func TestSave(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-save")
-	testutil.Ok(t, err)
+	tmpDir := t.TempDir()
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+	testutil.Ok(t, os.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(tmpDir, "obsctl", "test", "config.json")))
 
 	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
@@ -111,11 +109,10 @@ func TestSave(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-save")
-	testutil.Ok(t, err)
+	tmpDir := t.TempDir()
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+	testutil.Ok(t, os.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(tmpDir, "obsctl", "test", "config.json")))
 
 	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
@@ -192,11 +189,10 @@ func TestRead(t *testing.T) {
 }
 
 func TestAddAPI(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-save")
-	testutil.Ok(t, err)
+	tmpDir := t.TempDir()
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+	testutil.Ok(t, os.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(tmpDir, "obsctl", "test", "config.json")))
 
 	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
@@ -363,11 +359,10 @@ func TestAddAPI(t *testing.T) {
 }
 
 func TestRemoveAPI(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-save")
-	testutil.Ok(t, err)
+	tmpDir := t.TempDir()
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+	testutil.Ok(t, os.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(tmpDir, "obsctl", "test", "config.json")))
 
 	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
@@ -573,11 +568,10 @@ func TestRemoveAPI(t *testing.T) {
 }
 
 func TestAddTenant(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-save")
-	testutil.Ok(t, err)
+	tmpDir := t.TempDir()
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+	testutil.Ok(t, os.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(tmpDir, "obsctl", "test", "config.json")))
 
 	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
@@ -693,11 +687,10 @@ func TestAddTenant(t *testing.T) {
 }
 
 func TestRemoveTenant(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-save")
-	testutil.Ok(t, err)
+	tmpDir := t.TempDir()
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+	testutil.Ok(t, os.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(tmpDir, "obsctl", "test", "config.json")))
 
 	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
@@ -773,11 +766,10 @@ func TestRemoveTenant(t *testing.T) {
 }
 
 func TestGetCurrentContext(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-save")
-	testutil.Ok(t, err)
+	tmpDir := t.TempDir()
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+	testutil.Ok(t, os.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(tmpDir, "obsctl", "test", "config.json")))
 
 	t.Run("empty config", func(t *testing.T) {
@@ -828,11 +820,10 @@ func TestGetCurrentContext(t *testing.T) {
 }
 
 func TestSetCurrentContext(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-save")
-	testutil.Ok(t, err)
+	tmpDir := t.TempDir()
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+	testutil.Ok(t, os.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(tmpDir, "obsctl", "test", "config.json")))
 
 	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
@@ -922,11 +913,10 @@ func TestSetCurrentContext(t *testing.T) {
 }
 
 func TestRemoveContext(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-save")
-	testutil.Ok(t, err)
+	tmpDir := t.TempDir()
 	t.Cleanup(func() { testutil.Ok(t, os.RemoveAll(tmpDir)) })
 	testutil.Ok(t, os.MkdirAll(filepath.Join(tmpDir, "obsctl", "test"), os.ModePerm))
-	testutil.Ok(t, ioutil.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
+	testutil.Ok(t, os.WriteFile(filepath.Join(tmpDir, "obsctl", "test", "config.json"), []byte(""), os.ModePerm))
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(tmpDir, "obsctl", "test", "config.json")))
 
 	tlogger := level.NewFilter(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), level.AllowDebug())
