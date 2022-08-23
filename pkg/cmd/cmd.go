@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -120,7 +120,7 @@ func handleResponse(body []byte, contentType string, statusCode int, cmd *cobra.
 	return fmt.Errorf("request failed with status code %d", statusCode)
 }
 
-func handleGraph(body []byte, graph, query string, cmd *cobra.Command) error {
+func handleGraph(body []byte, graph, query, dir string, w io.Writer) error {
 	// TODO(saswatamcode): Update spec so that we can use client/models directly.
 	var m struct {
 		Data struct {
@@ -142,7 +142,7 @@ func handleGraph(body []byte, graph, query string, cmd *cobra.Command) error {
 
 	// Decode the Result depending on the ResultType
 	switch m.Data.ResultType {
-	case string(models.RangeQueryResponseResultTypeMatrix):
+	case string(models.MetricRangeQueryResponseResultTypeMatrix):
 		if err := json.Unmarshal(m.Data.Result, &matrixResult); err != nil {
 			return fmt.Errorf("decode result into ValueTypeMatrix %w", err)
 		}
@@ -171,7 +171,7 @@ func handleGraph(body []byte, graph, query string, cmd *cobra.Command) error {
 		}
 
 		// TODO(saswatamcode): Output data in some format and use standard graphing tools.
-		fmt.Fprintln(cmd.OutOrStdout(), asciigraph.PlotMany(data, asciigraph.Width(80)))
+		fmt.Fprintln(w, asciigraph.PlotMany(data, asciigraph.Width(80)))
 		return nil
 	case "png":
 		var data []chart.Series
@@ -201,12 +201,7 @@ func handleGraph(body []byte, graph, query string, cmd *cobra.Command) error {
 			Series: data,
 		}
 
-		wd, err := os.Getwd()
-		if err != nil {
-			return fmt.Errorf("could not get working dir: %w", err)
-		}
-
-		f, err := os.Create(path.Join(wd, "graph"+time.Now().String()+".png"))
+		f, err := os.Create(dir)
 		if err != nil {
 			return fmt.Errorf("could not create graph png file: %w", err)
 		}

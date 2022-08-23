@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
+	"time"
 
 	"github.com/observatorium/api/client"
 	"github.com/observatorium/api/client/parameters"
@@ -312,7 +314,12 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 				}
 
 				if graph != "" {
-					return handleGraph(resp.Body, graph, string(query), cmd)
+					wd, err := os.Getwd()
+					if err != nil {
+						return fmt.Errorf("could not get working dir: %w", err)
+					}
+
+					return handleGraph(resp.Body, graph, string(query), path.Join(wd, "graph"+time.Now().String()+".png"), cmd.OutOrStdout())
 				}
 
 				return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
