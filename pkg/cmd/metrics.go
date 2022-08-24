@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
+	"time"
 
 	"github.com/observatorium/api/client"
 	"github.com/observatorium/api/client/parameters"
@@ -267,8 +269,8 @@ func NewMetricsSetCmd(ctx context.Context) *cobra.Command {
 
 func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 	var (
-		isRange                             bool
-		evalTime, timeout, start, end, step string
+		isRange                                    bool
+		evalTime, timeout, start, end, step, graph string
 	)
 	cmd := &cobra.Command{
 		Use:          "query",
@@ -311,6 +313,15 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 					return fmt.Errorf("getting response: %w", err)
 				}
 
+				if graph != "" {
+					wd, err := os.Getwd()
+					if err != nil {
+						return fmt.Errorf("could not get working dir: %w", err)
+					}
+
+					return handleGraph(resp.Body, graph, string(query), path.Join(wd, "graph"+time.Now().String()+".png"), cmd.OutOrStdout())
+				}
+
 				return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
 			} else {
 				params := &client.GetInstantQueryParams{Query: &query}
@@ -339,6 +350,7 @@ func NewMetricsQueryCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().StringVarP(&start, "start", "s", "", "Start timestamp. Must be provided if --range is true.")
 	cmd.Flags().StringVarP(&end, "end", "e", "", "End timestamp. Must be provided if --range is true.")
 	cmd.Flags().StringVar(&step, "step", "", "Query resolution step width. Only used if --range is provided.")
+	cmd.Flags().StringVar(&graph, "graph", "", "If specified, range query result will output an (ascii|png) graph.")
 
 	// Common flags.
 	cmd.Flags().StringVar(&timeout, "timeout", "", "Evaluation timeout. Optional.")

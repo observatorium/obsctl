@@ -5,13 +5,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/bwplotka/mdox/pkg/clilog"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/guptarohit/asciigraph"
+	"github.com/observatorium/api/client/models"
 	"github.com/observatorium/obsctl/pkg/version"
+	"github.com/prometheus/common/model"
 	"github.com/spf13/cobra"
+	"github.com/wcharczuk/go-chart/v2"
 )
 
 const (
@@ -106,9 +113,106 @@ func handleResponse(body []byte, contentType string, statusCode int, cmd *cobra.
 
 			return fmt.Errorf(jsonErr)
 		default:
-			return fmt.Errorf("request failed with status code %d, error: %s\n", statusCode, string(body))
+			return fmt.Errorf("request failed with status code %d, error: %s", statusCode, string(body))
 		}
 	}
 
-	return fmt.Errorf("request failed with status code %d\n", statusCode)
+	return fmt.Errorf("request failed with status code %d", statusCode)
+}
+
+func handleGraph(body []byte, graph, query, dir string, w io.Writer) error {
+	// TODO(saswatamcode): Update spec so that we can use client/models directly.
+	var m struct {
+		Data struct {
+			ResultType string          `json:"resultType"`
+			Result     json.RawMessage `json:"result"`
+		} `json:"data"`
+
+		Error     string `json:"error,omitempty"`
+		ErrorType string `json:"errorType,omitempty"`
+		// Extra field supported by Thanos Querier.
+		Warnings []string `json:"warnings"`
+	}
+
+	if err := json.Unmarshal(body, &m); err != nil {
+		return fmt.Errorf("unmarshal query range response %w", err)
+	}
+
+	var matrixResult model.Matrix
+
+	// Decode the Result depending on the ResultType
+	switch m.Data.ResultType {
+	case string(models.MetricRangeQueryResponseResultTypeMatrix):
+		if err := json.Unmarshal(m.Data.Result, &matrixResult); err != nil {
+			return fmt.Errorf("decode result into ValueTypeMatrix %w", err)
+		}
+	default:
+		if m.Warnings != nil {
+			return fmt.Errorf("error: %s, type: %s, warning: %s", m.Error, m.ErrorType, strings.Join(m.Warnings, ", "))
+		}
+		if m.Error != "" {
+			return fmt.Errorf("error: %s, type: %s", m.Error, m.ErrorType)
+		}
+
+		return fmt.Errorf("received status code: 200, unknown response type: '%q'", m.Data.ResultType)
+	}
+
+	// Output graph based on type specified.
+	switch graph {
+	case "ascii":
+		var data [][]float64
+
+		for _, ss := range matrixResult {
+			stream := []float64{}
+			for _, sample := range ss.Values {
+				stream = append(stream, float64(sample.Value))
+			}
+			data = append(data, stream)
+		}
+
+		// TODO(saswatamcode): Output data in some format and use standard graphing tools.
+		fmt.Fprintln(w, asciigraph.PlotMany(data, asciigraph.Width(80)))
+		return nil
+	case "png":
+		var data []chart.Series
+
+		for _, ss := range matrixResult {
+			xstream := []time.Time{}
+			ystream := []float64{}
+			for _, sample := range ss.Values {
+				ystream = append(ystream, float64(sample.Value))
+				xstream = append(xstream, sample.Timestamp.Time())
+			}
+			data = append(data, chart.TimeSeries{
+				Name:    ss.Metric.String(),
+				XValues: xstream,
+				YValues: ystream,
+				YAxis:   chart.YAxisPrimary,
+			})
+		}
+
+		graph := chart.Chart{
+			XAxis: chart.XAxis{
+				Name: "Time",
+			},
+			YAxis: chart.YAxis{
+				Name: "Value",
+			},
+			Series: data,
+		}
+
+		f, err := os.Create(dir)
+		if err != nil {
+			return fmt.Errorf("could not create graph png file: %w", err)
+		}
+		defer f.Close()
+
+		if err := graph.Render(chart.PNG, f); err != nil {
+			return fmt.Errorf("could not render graph: %w", err)
+		}
+
+		return nil
+	default:
+		return fmt.Errorf("unsupported graph type: %s", graph)
+	}
 }
