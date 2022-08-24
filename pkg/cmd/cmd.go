@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 
@@ -215,4 +217,17 @@ func handleGraph(body []byte, graph, query, dir string, w io.Writer) error {
 	default:
 		return fmt.Errorf("unsupported graph type: %s", graph)
 	}
+}
+
+func openInBrowser(url string) error {
+	var err error
+	switch runtime.GOOS {
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Run()
+	case "darwin":
+		err = exec.Command("open", url).Run()
+	default:
+		err = exec.Command("xdg-open", url).Run()
+	}
+	return err
 }

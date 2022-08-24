@@ -169,6 +169,7 @@ Available Commands:
   get         Read series, labels & rules (JSON/YAML) of a tenant.
   query       Query metrics for a tenant.
   set         Write Prometheus Rules configuration for a tenant.
+  ui          Starts a proxy server and opens a Thanos Query UI for making requests to Observatorium API as a tenant.
 
 Flags:
   -h, --help   help for metrics
