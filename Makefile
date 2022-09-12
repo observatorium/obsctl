@@ -10,6 +10,9 @@ GOBIN ?= $(firstword $(subst :, ,${GOPATH}))/bin
 # Tools.
 GIT ?= $(shell which git)
 
+# Promu is using this exact variable name, do not rename.
+PREFIX  ?= $(GOBIN)
+
 # Support gsed on OSX (installed via brew), falling back to sed. On Linux
 # systems gsed won't be installed, so will use sed as expected.
 SED ?= $(shell which gsed 2>/dev/null || which sed)
@@ -40,9 +43,32 @@ help: ## Displays help.
 all: format build
 
 .PHONY: build
-build: check-git deps ## Build obsctl.
-	@echo ">> building obsctl"
-	@GOBIN=$(GOBIN) go install github.com/observatorium/obsctl
+build: ## Builds obsctl binary using `promu`.
+build: check-git deps $(PROMU)
+	@echo ">> building obsctl binary in $(PREFIX)"
+	@$(PROMU) build --prefix $(PREFIX)
+
+GIT_BRANCH=$(shell $(GIT) rev-parse --abbrev-ref HEAD)
+.PHONY: crossbuild
+crossbuild: ## Builds all binaries for all platforms.
+ifeq ($(GIT_BRANCH), main)
+crossbuild: | $(PROMU)
+	@echo ">> crossbuilding all binaries"
+	# we only care about below two for the main branch
+	$(PROMU) crossbuild -v -p linux/amd64 -p linux/arm64
+else
+crossbuild: | $(PROMU)
+	@echo ">> crossbuilding all binaries"
+	$(PROMU) crossbuild -v
+endif
+
+.PHONY: tarballs-release
+tarballs-release: ## Build tarballs.
+tarballs-release: $(PROMU)
+	@echo ">> Publishing tarballs"
+	$(PROMU) crossbuild -v tarballs
+	$(PROMU) checksum -v .tarballs
+	$(PROMU) release -v .tarballs
 
 .PHONY: check-comments
 check-comments: ## Checks Go code comments if they have trailing period (excludes protobuffers and vendor files). Comments with more than 3 spaces at beginning are omitted from the check, example: '//    - foo'.

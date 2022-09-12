@@ -23,3 +23,8 @@ test/e2e/e2e_*
 test/e2e/tmp
 
 .vscode/* 
+
+# Ignore promu artifacts.
+/.build
+/.release
+/.tarballs
