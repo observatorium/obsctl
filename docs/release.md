@@ -2,7 +2,7 @@
 
 We use semantic versioning for `obsctl` in format `vX.Y.Z`.
 
-We have started including binaries after initial release. Users can also use `go install` to install obsctl.
+We also ship binaries, read [docs on how to install](https://github.com/observatorium/obsctl#installing). Users can also use `go install` to install obsctl.
 
 We follow a simple release process as follows:
 1. Create a PR against `main` to update the `version/version.go` and `VERSION` file to the appropriate next version (and remove the `-dev` suffix).
