@@ -62,7 +62,10 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 
 	createTenantsYAML(t, e, hydraURL, noOfTenants)
 	createRBACYAML(t, e, noOfTenants)
-	createLokiYAML(t, e)
+
+	bucket, endpoint, accessId, accessKey := startObjectStorageService(t, e)
+	createLokiYAML(t, e, accessId, accessKey, endpoint, bucket)
+	createRulesObjstoreYAML(t, e, bucket, endpoint, accessId, accessKey)
 
 	read, write, rule := startServicesForMetrics(t, e, envName)
 	logsEndpoint := startServicesForLogs(t, e)
@@ -84,7 +87,8 @@ func preTest(t *testing.T) *e2e.DockerEnvironment {
 		withRunParameters(&runParams{period: "500ms", threshold: "1", latency: "10s", duration: "0"}),
 	)
 
-	createRulesYAML(t, e)
+	createPrometheusRulesYAML(t, e)
+	createLokiRulesYAML(t, e)
 
 	testutil.Ok(t, e2e.StartAndWaitReady(up))
 	testutil.Ok(t, err)
@@ -234,7 +238,7 @@ func TestObsctlMetricsCommands(t *testing.T) {
 		contextCmd := cmd.NewObsctlCmd(context.Background())
 
 		contextCmd.SetOut(b)
-		contextCmd.SetArgs([]string{"metrics", "set", "--rule.file=" + filepath.Join(e.SharedDir(), "obsctl", "rules.yaml")})
+		contextCmd.SetArgs([]string{"metrics", "set", "--rule.file=" + filepath.Join(e.SharedDir(), "obsctl", "prometheus-rules.yaml")})
 		testutil.Ok(t, contextCmd.Execute())
 
 		got, err := io.ReadAll(b)
@@ -456,8 +460,144 @@ func TestObsctlLogsCommands(t *testing.T) {
 		assertResponse(t, string(got), "streams")
 	})
 
-	t.Cleanup(func() {
+	t.Run("get rules for a tenant (none configured)", func(t *testing.T) {
+		b := bytes.NewBufferString("")
 
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "get", "rules"})
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := io.ReadAll(b)
+		testutil.Ok(t, err)
+
+		exp := `{
+	"status": "success",
+	"data": {
+		"groups": []
+	},
+	"errorType": "",
+	"error": ""
+}
+`
+
+		testutil.Equals(t, exp, string(got))
+	})
+
+	t.Run("get raw rules for a tenant (none configured)", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "get", "rules.raw"})
+		err := contextCmd.Execute()
+		testutil.NotOk(t, err)
+
+		assertResponse(t, err.Error(), "no rule groups found")
+	})
+
+	t.Run("set rules for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "set", "--namespace", "logs", "--rule.file=" + filepath.Join(e.SharedDir(), "obsctl", "loki-rules.yaml")})
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := io.ReadAll(b)
+		testutil.Ok(t, err)
+
+		exp := `{"status":"success","data":null,"errorType":"","error":""}
+`
+
+		testutil.Equals(t, exp, string(got))
+	})
+
+	t.Run("get all rules.raw namespaces for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "get", "rules.raw"})
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := io.ReadAll(b)
+		testutil.Ok(t, err)
+
+		assertResponse(t, string(got), "TestFiringAlert")
+	})
+
+	t.Run("get all rules.raw groups in namespace for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "get", "rules.raw", "--namespace", "logs"})
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := io.ReadAll(b)
+		testutil.Ok(t, err)
+
+		assertResponse(t, string(got), "TestFiringAlert")
+	})
+
+	t.Run("get a rules.raw group in namespace for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "get", "rules.raw", "--namespace", "logs", "--group", "test-firing-alert"})
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := io.ReadAll(b)
+		testutil.Ok(t, err)
+
+		assertResponse(t, string(got), "TestFiringAlert")
+	})
+
+	t.Run("get rules for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "get", "rules"})
+
+		time.Sleep(30 * time.Second) // Wait a bit for rules to get evaluated.
+
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := io.ReadAll(b)
+		testutil.Ok(t, err)
+
+		assertResponse(t, string(got), "TestFiringAlert")
+	})
+
+	t.Run("get alerts for a tenant", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"logs", "get", "alerts"})
+
+		time.Sleep(30 * time.Second) // Wait a bit for rules to get evaluated.
+
+		testutil.Ok(t, contextCmd.Execute())
+
+		got, err := io.ReadAll(b)
+		testutil.Ok(t, err)
+
+		assertResponse(t, string(got), "TestFiringAlert")
+	})
+
+	t.Cleanup(func() {
 		dir, err := os.Getwd()
 		testutil.Ok(t, err)
 
@@ -466,7 +606,5 @@ func TestObsctlLogsCommands(t *testing.T) {
 		cmd.Stderr = os.Stderr
 
 		testutil.Ok(t, cmd.Run())
-
 	})
-
 }

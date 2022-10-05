@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/observatorium/api/client"
 	"github.com/observatorium/api/client/parameters"
@@ -135,9 +136,154 @@ func NewLogsGetCmd(ctx context.Context) *cobra.Command {
 		panic(err)
 	}
 
+	// Alerts Command.
+	alertsCmd := &cobra.Command{
+		Use:          "alerts",
+		Short:        "Get alerts of a tenant.",
+		Long:         "Get alerts of a tenant.",
+		SilenceUsage: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
+			if err != nil {
+				return fmt.Errorf("custom fetcher: %w", err)
+			}
+
+			resp, err := f.GetLogsPromAlertsWithResponse(ctx, currentTenant)
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
+		},
+	}
+
+	// Rules command.
+	rulesCmd := &cobra.Command{
+		Use:          "rules",
+		Short:        "Get rules of a tenant.",
+		Long:         "Get rules of a tenant.",
+		SilenceUsage: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
+			if err != nil {
+				return fmt.Errorf("custom fetcher: %w", err)
+			}
+
+			resp, err := f.GetLogsPromRulesWithResponse(ctx, currentTenant)
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
+		},
+	}
+
+	// Rules.raw command.
+	var (
+		rulesNamespace, rulesGroup string
+	)
+	rulesRawCmd := &cobra.Command{
+		Use:          "rules.raw",
+		Short:        "Get configured rules of a tenant.",
+		Long:         "Get configured rules of a tenant.",
+		SilenceUsage: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
+			if err != nil {
+				return fmt.Errorf("custom fetcher: %w", err)
+			}
+
+			if rulesNamespace == "" {
+				resp, err := f.GetAllLogsRulesWithResponse(ctx, currentTenant)
+				if err != nil {
+					return fmt.Errorf("getting response: %w", err)
+				}
+
+				return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
+			}
+
+			if rulesGroup != "" {
+				resp, err := f.GetLogsRulesGroupWithResponse(
+					ctx, currentTenant, parameters.LogRulesNamespace(rulesNamespace), parameters.LogRulesGroup(rulesGroup),
+				)
+				if err != nil {
+					return fmt.Errorf("getting response: %w", err)
+				}
+
+				return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
+			}
+
+			resp, err := f.GetLogsRulesWithResponse(ctx, currentTenant, parameters.LogRulesNamespace(rulesNamespace))
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			return handleResponse(resp.Body, resp.HTTPResponse.Header.Get("content-type"), resp.StatusCode(), cmd)
+		},
+	}
+	rulesRawCmd.Flags().StringVarP(&rulesNamespace, "namespace", "n", "", "Rules Namespace")
+	rulesRawCmd.Flags().StringVarP(&rulesGroup, "group", "g", "", "Rules Group in a namespace")
+
 	cmd.AddCommand(seriesCmd)
 	cmd.AddCommand(labelsCmd)
 	cmd.AddCommand(labelValuesCmd)
+	cmd.AddCommand(alertsCmd)
+	cmd.AddCommand(rulesCmd)
+	cmd.AddCommand(rulesRawCmd)
+
+	return cmd
+}
+
+func NewLogsSetCmd(ctx context.Context) *cobra.Command {
+	var (
+		rulesNamespace, ruleFilePath string
+	)
+	cmd := &cobra.Command{
+		Use:          "set",
+		Short:        "Write Loki Rules configuration for a tenant.",
+		Long:         "Write Loki Rules configuration for a tenant.",
+		SilenceUsage: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			file, err := os.Open(ruleFilePath)
+			if err != nil {
+				return fmt.Errorf("opening rule file: %w", err)
+			}
+			defer file.Close()
+
+			f, currentTenant, err := fetcher.NewCustomFetcher(ctx, logger)
+			if err != nil {
+				return fmt.Errorf("custom fetcher: %w", err)
+			}
+
+			resp, err := f.SetLogsRulesWithBodyWithResponse(ctx, currentTenant, parameters.LogRulesNamespace(rulesNamespace), "application/yaml", file)
+			if err != nil {
+				return fmt.Errorf("getting response: %w", err)
+			}
+
+			if resp.StatusCode()/100 != 2 {
+				if len(resp.Body) != 0 {
+					fmt.Fprintln(cmd.OutOrStdout(), string(resp.Body))
+					return fmt.Errorf("request failed with status code %d", resp.StatusCode())
+				}
+			}
+
+			fmt.Fprintln(cmd.OutOrStdout(), string(resp.Body))
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVarP(&rulesNamespace, "namespace", "n", "", "Rules Namespace")
+	cmd.Flags().StringVar(&ruleFilePath, "rule.file", "", "Path to Rules configuration file, which will be set for a tenant.")
+
+	err := cmd.MarkFlagRequired("rule.file")
+	if err != nil {
+		panic(err)
+	}
+
+	err = cmd.MarkFlagRequired("namespace")
+	if err != nil {
+		panic(err)
+	}
 
 	return cmd
 }
@@ -247,6 +393,7 @@ func NewLogsCmd(ctx context.Context) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewLogsGetCmd(ctx))
+	cmd.AddCommand(NewLogsSetCmd(ctx))
 	cmd.AddCommand(NewLogsQueryCmd(ctx))
 
 	return cmd

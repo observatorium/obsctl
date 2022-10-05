@@ -264,6 +264,7 @@ Usage:
 Available Commands:
   get         Read series, labels & labels values (JSON/YAML) of a tenant.
   query       Query logs for a tenant.
+  set         Write Loki Rules configuration for a tenant.
 
 Flags:
   -h, --help   help for logs
@@ -284,8 +285,11 @@ Usage:
   obsctl logs get [command]
 
 Available Commands:
+  alerts      Get alerts of a tenant.
   labels      Get labels of a tenant.
   labelvalues Get label values of a tenant.
+  rules       Get rules of a tenant.
+  rules.raw   Get configured rules of a tenant.
   series      Get series of a tenant.
 
 Flags:

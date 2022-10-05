@@ -204,7 +204,7 @@ func createObsctlConfigJson(
 	testutil.Ok(t, err)
 }
 
-const ruleYAML = `groups:
+const prometheusRuleYAML = `groups:
 - interval: 30s
   name: test-firing-alert
   rules:
@@ -219,16 +219,16 @@ const ruleYAML = `groups:
       severity: page
 `
 
-func createRulesYAML(
+func createPrometheusRulesYAML(
 	t *testing.T,
 	e e2e.Environment,
 ) {
 	yamlContent := []byte(fmt.Sprint(
-		ruleYAML,
+		prometheusRuleYAML,
 	))
 
 	err := os.WriteFile(
-		filepath.Join(e.SharedDir(), "obsctl", "rules.yaml"),
+		filepath.Join(e.SharedDir(), "obsctl", "prometheus-rules.yaml"),
 		yamlContent,
 		os.FileMode(0755),
 	)
@@ -236,10 +236,61 @@ func createRulesYAML(
 	testutil.Ok(t, err)
 }
 
-const lokiYAML = `auth_enabled: true
+const lokiRuleYAML = `
+interval: 30s
+name: test-firing-alert
+rules:
+- alert: TestFiringAlert
+  annotations:
+    description: Test firing alert
+  expr: |
+    1 > 0
+  for: 1s
+  labels:
+    severity: page
+`
+
+func createLokiRulesYAML(
+	t *testing.T,
+	e e2e.Environment,
+) {
+	yamlContent := []byte(fmt.Sprint(
+		lokiRuleYAML,
+	))
+
+	err := os.WriteFile(
+		filepath.Join(e.SharedDir(), "obsctl", "loki-rules.yaml"),
+		yamlContent,
+		os.FileMode(0755),
+	)
+
+	testutil.Ok(t, err)
+}
+
+const lokiYAMLTpl = `auth_enabled: true
 
 server:
   http_listen_port: 3100
+
+common:
+ storage:
+  s3:
+    s3forcepathstyle: true
+    access_key_id: %[1]s
+    secret_access_key: %[2]s
+    endpoint: %[3]s
+    bucketnames: %[4]s
+    insecure: true
+
+compactor:
+  working_directory: /tmp/loki/compactor
+  shared_store: s3
+  compaction_interval: 5m
+
+distributor:
+  ring:
+    kvstore:
+      store: inmemory
 
 ingester:
   lifecycler:
@@ -248,31 +299,41 @@ ingester:
       kvstore:
         store: inmemory
       replication_factor: 1
+
     final_sleep: 0s
   chunk_idle_period: 5m
   chunk_retain_period: 30s
+  wal:
+    dir: /tmp/loki/ingester/wal
+    enabled: false
 
 querier:
   engine:
     max_look_back_period: 5m
     timeout: 3m
 
+ruler:
+  storage:
+    type: s3
+  wal:
+   dir: /tmp/loki/ruler/wal
+  rule_path: /tmp/loki/
+ 
 schema_config:
   configs:
   - from: 2019-01-01
-    store: boltdb
-    object_store: filesystem
-    schema: v11
+    store: boltdb-shipper
+    object_store: s3
+    schema: v12
     index:
       prefix: index_
-      period: 168h
+      period: 24h
 
 storage_config:
-  boltdb:
-    directory: /tmp/loki/index
-
-  filesystem:
-    directory: /tmp/loki/chunks
+  boltdb_shipper:
+    active_index_directory: /tmp/loki/index
+    cache_location: /tmp/loki/index_cache
+    shared_store: s3
 
 limits_config:
   enforce_metric_name: false
@@ -283,10 +344,9 @@ limits_config:
 func createLokiYAML(
 	t *testing.T,
 	e e2e.Environment,
+	accessId, accessKey, endpoint, bucket string,
 ) {
-	yamlContent := []byte(fmt.Sprint(
-		lokiYAML,
-	))
+	yamlContent := []byte(fmt.Sprintf(lokiYAMLTpl, accessId, accessKey, endpoint, bucket))
 
 	err := os.WriteFile(
 		filepath.Join(e.SharedDir(), "config", "loki.yml"),
