@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/bwplotka/mdox/pkg/clilog"
+	"github.com/ghodss/yaml"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/guptarohit/asciigraph"
@@ -92,23 +93,59 @@ func prettyPrintJSON(b []byte) (string, error) {
 	return out.String(), nil
 }
 
+// prettyPrintYAML prints YAML as indented JSON to stdout.
+func prettyPrintYAML(b []byte) (string, error) {
+	var out bytes.Buffer
+	jb, err := yaml.YAMLToJSON(b)
+	if err != nil {
+		level.Debug(logger).Log("msg", "failed yaml to json conversion", "yaml", string(b))
+		return "", fmt.Errorf("conversion JSON %w", err)
+	}
+
+	err = json.Indent(&out, jb, "", "\t")
+	if err != nil {
+		level.Debug(logger).Log("msg", "failed indent", "json", string(b))
+		return "", fmt.Errorf("indent JSON %w", err)
+	}
+
+	return out.String(), nil
+}
+
 func handleResponse(body []byte, contentType string, statusCode int, cmd *cobra.Command) error {
 	if statusCode/100 == 2 {
-		json, err := prettyPrintJSON(body)
-		if err != nil {
-			return fmt.Errorf("request failed with status code %d pretty printing: %v", statusCode, err)
-		}
+		switch contentType {
+		case "application/json", "application/json; charset=UTF-8":
+			json, err := prettyPrintJSON(body)
+			if err != nil {
+				return fmt.Errorf("request failed with status code %d pretty printing: %v", statusCode, err)
+			}
 
-		fmt.Fprintln(cmd.OutOrStdout(), json)
-		return nil
+			fmt.Fprintln(cmd.OutOrStdout(), json)
+			return nil
+		case "application/yaml":
+			json, err := prettyPrintYAML(body)
+			if err != nil {
+				return fmt.Errorf("request failed with status code %d pretty printing: %v", statusCode, err)
+			}
+
+			fmt.Fprintln(cmd.OutOrStdout(), json)
+			return nil
+		}
 	}
 
 	if len(body) != 0 {
 		// Pretty print only if we know the error response is JSON.
 		// In future we might want to handle other types as well.
 		switch contentType {
-		case "application/json":
+		case "application/json", "application/json; charset=UTF-8":
 			jsonErr, err := prettyPrintJSON(body)
+			if err != nil {
+				return fmt.Errorf("request failed with status code %d pretty printing: %v", statusCode, err)
+			}
+
+			return fmt.Errorf(jsonErr)
+		case "application/yaml":
+			jsonErr, err := prettyPrintYAML(body)
 			if err != nil {
 				return fmt.Errorf("request failed with status code %d pretty printing: %v", statusCode, err)
 			}

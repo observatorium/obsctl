@@ -20,7 +20,7 @@ const (
 	thanosImage           = "quay.io/thanos/thanos:v0.25.1"
 	thanosRuleSyncerImage = "quay.io/observatorium/thanos-rule-syncer:main-2022-02-01-d4c24bc"
 	rulesObjectStoreImage = "quay.io/observatorium/rules-objstore:main-2022-01-19-8650540"
-	lokiImage             = "grafana/loki:2.3.0"
+	lokiImage             = "grafana/loki:2.6.1"
 
 	logLevelError = "error"
 )
@@ -89,6 +89,7 @@ func newObservatoriumAPIService(
 		args = append(args, "--logs.read.endpoint="+"http://"+opts.logsEndpoint)
 		args = append(args, "--logs.tail.endpoint="+"http://"+opts.logsEndpoint)
 		args = append(args, "--logs.write.endpoint="+"http://"+opts.logsEndpoint)
+		args = append(args, "--logs.rules.endpoint="+"http://"+opts.logsEndpoint)
 	}
 
 	return e2e.NewInstrumentedRunnable(e, "observatorium_api").WithPorts(ports, "http-internal").Init(
@@ -192,6 +193,15 @@ func newThanosRulerService(e e2e.Environment, query string) e2e.InstrumentedRunn
 	)
 }
 
+func startObjectStorageService(t *testing.T, e e2e.Environment) (string, string, string, string) {
+	bucket := "rulesobjstore"
+
+	minio := e2edb.NewMinio(e, "rules-minio", bucket)
+	testutil.Ok(t, e2e.StartAndWaitReady(minio))
+
+	return bucket, minio.InternalEndpoint(e2edb.AccessPortName), e2edb.MinioAccessKey, e2edb.MinioSecretKey
+}
+
 func startServicesForMetrics(t *testing.T, e e2e.Environment, envName string) (string, string, string) {
 	thanosReceive := newThanosReceiveService(e)
 	thanosRule := newThanosRulerService(e, "http://"+envName+"-"+"thanos-query:"+"9090")
@@ -203,13 +213,6 @@ func startServicesForMetrics(t *testing.T, e e2e.Environment, envName string) (s
 	)
 
 	testutil.Ok(t, e2e.StartAndWaitReady(thanosReceive, thanosQuery, thanosRule))
-
-	bucket := "rulesobjstore"
-
-	minio := e2edb.NewMinio(e, "rules-minio", bucket)
-	testutil.Ok(t, e2e.StartAndWaitReady(minio))
-
-	createRulesObjstoreYAML(t, e, bucket, minio.InternalEndpoint(e2edb.AccessPortName), e2edb.MinioAccessKey, e2edb.MinioSecretKey)
 
 	rulesObjstore := newRulesObjstoreService(e)
 
@@ -234,12 +237,16 @@ func startServicesForLogs(t *testing.T, e e2e.Environment) (
 }
 
 func newLokiService(e e2e.Environment) e2e.InstrumentedRunnable {
-	ports := map[string]int{"http": 3100}
+	ports := map[string]int{"http": 3100, "grpc": 9095}
 
 	args := e2e.BuildArgs(map[string]string{
-		"-config.file": filepath.Join("/shared/config", "loki.yml"),
-		"-target":      "all",
-		"-log.level":   logLevelError,
+		"-config.file":                filepath.Join("/shared/config", "loki.yml"),
+		"-server.grpc-listen-address": "0.0.0.0",
+		"-server.grpc-listen-port":    strconv.Itoa(ports["grpc"]),
+		"-server.http-listen-address": "0.0.0.0",
+		"-server.http-listen-port":    strconv.Itoa(ports["http"]),
+		"-target":                     "all",
+		"-log.level":                  logLevelError,
 	})
 
 	return e2e.NewInstrumentedRunnable(e, "loki").WithPorts(ports, "http").Init(
