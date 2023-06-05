@@ -119,7 +119,7 @@ Flags:
       --oidc.client-id string       The OIDC client ID, see https://tools.ietf.org/html/rfc6749#section-2.3.
       --oidc.client-secret string   The OIDC client secret, see https://tools.ietf.org/html/rfc6749#section-2.3.
       --oidc.issuer-url string      The OIDC issuer URL, see https://openid.net/specs/openid-connect-discovery-1_0.html#IssuerDiscovery.
-      --oidc.scopes strings         Optional scopes, must contain 'openid', see https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest (default [openid,offline_access])
+      --oidc.scopes strings         Optional scopes, see https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest (default [offline_access])
       --tenant string               The name of the tenant.
 
 Global Flags:

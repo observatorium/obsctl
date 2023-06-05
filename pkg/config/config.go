@@ -93,6 +93,8 @@ func (t *TenantConfig) Client(ctx context.Context, logger log.Logger) (*http.Cli
 			return nil, fmt.Errorf("constructing oidc provider: %w", err)
 		}
 
+		t.OIDC.Scopes = append(t.OIDC.Scopes, "openid")
+
 		ccc := clientcredentials.Config{
 			ClientID:     t.OIDC.ClientID,
 			ClientSecret: t.OIDC.ClientSecret,
@@ -138,6 +140,8 @@ func (t *TenantConfig) Transport(ctx context.Context, logger log.Logger) (http.R
 		if err != nil {
 			return nil, fmt.Errorf("constructing oidc provider: %w", err)
 		}
+
+		t.OIDC.Scopes = append(t.OIDC.Scopes, "openid")
 
 		ccc := clientcredentials.Config{
 			ClientID:     t.OIDC.ClientID,
