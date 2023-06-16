@@ -78,10 +78,11 @@ type TenantConfig struct {
 type OIDCConfig struct {
 	Token *oauth2.Token `json:"token"`
 
-	Audience     string `json:"audience"`
-	ClientID     string `json:"clientID"`
-	ClientSecret string `json:"clientSecret"`
-	IssuerURL    string `json:"issuerURL"`
+	Audience      string `json:"audience"`
+	ClientID      string `json:"clientID"`
+	ClientSecret  string `json:"clientSecret"`
+	IssuerURL     string `json:"issuerURL"`
+	OfflineAccess bool   `json:"offlineAccess"`
 }
 
 // Client returns a OAuth2 HTTP client based on the configuration for a tenant.
@@ -92,11 +93,17 @@ func (t *TenantConfig) Client(ctx context.Context, logger log.Logger) (*http.Cli
 			return nil, fmt.Errorf("constructing oidc provider: %w", err)
 		}
 
+		scopes := []string{"openid"}
+
+		if t.OIDC.OfflineAccess {
+			scopes = append(scopes, "offline_access")
+		}
+
 		ccc := clientcredentials.Config{
 			ClientID:     t.OIDC.ClientID,
 			ClientSecret: t.OIDC.ClientSecret,
 			TokenURL:     provider.Endpoint().TokenURL,
-			Scopes:       []string{"openid", "offline_access"},
+			Scopes:       scopes,
 		}
 
 		if t.OIDC.Audience != "" {
@@ -138,11 +145,17 @@ func (t *TenantConfig) Transport(ctx context.Context, logger log.Logger) (http.R
 			return nil, fmt.Errorf("constructing oidc provider: %w", err)
 		}
 
+		scopes := []string{"openid"}
+
+		if t.OIDC.OfflineAccess {
+			scopes = append(scopes, "offline_access")
+		}
+
 		ccc := clientcredentials.Config{
 			ClientID:     t.OIDC.ClientID,
 			ClientSecret: t.OIDC.ClientSecret,
 			TokenURL:     provider.Endpoint().TokenURL,
-			Scopes:       []string{"openid", "offline_access"},
+			Scopes:       scopes,
 		}
 
 		if t.OIDC.Audience != "" {

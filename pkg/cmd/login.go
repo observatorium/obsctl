@@ -51,6 +51,7 @@ func NewLoginCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().StringVar(&tenantCfg.OIDC.ClientSecret, "oidc.client-secret", "", "The OIDC client secret, see https://tools.ietf.org/html/rfc6749#section-2.3.")
 	cmd.Flags().StringVar(&tenantCfg.OIDC.ClientID, "oidc.client-id", "", "The OIDC client ID, see https://tools.ietf.org/html/rfc6749#section-2.3.")
 	cmd.Flags().StringVar(&tenantCfg.OIDC.Audience, "oidc.audience", "", "The audience for whom the access token is intended, see https://openid.net/specs/openid-connect-core-1_0.html#IDToken.")
+	cmd.Flags().BoolVar(&tenantCfg.OIDC.OfflineAccess, "oidc.offline-access", true, "If set to false, oidc scope offline_access will not be requested, see https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest")
 
 	cmd.Flags().BoolVar(&disableOIDCCheck, "disable.oidc-check", false, "If set to true, OIDC flags will not be checked while saving tenant details locally.")
 
