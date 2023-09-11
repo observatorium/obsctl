@@ -15,7 +15,7 @@ import (
 // Adapted from https://github.com/observatorium/api/blob/main/test/e2e/services.go.
 
 const (
-	apiImage              = "quay.io/observatorium/api:latest"
+	apiImage              = "quay.io/observatorium/api:main-2023-07-31-2bd304b"
 	upImage               = "quay.io/observatorium/up:master-2021-02-12-03ef2f2"
 	thanosImage           = "quay.io/thanos/thanos:v0.25.1"
 	thanosRuleSyncerImage = "quay.io/observatorium/thanos-rule-syncer:main-2022-02-01-d4c24bc"
