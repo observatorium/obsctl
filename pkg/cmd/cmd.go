@@ -69,6 +69,7 @@ func NewObsctlCmd(ctx context.Context) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewMetricsCmd(ctx))
+	cmd.AddCommand(NewAlertmanagerCmd(ctx))
 	cmd.AddCommand(NewContextCommand(ctx))
 	cmd.AddCommand(NewLoginCmd(ctx))
 	cmd.AddCommand(NewLogoutCmd(ctx))
@@ -143,14 +144,14 @@ func handleResponse(body []byte, contentType string, statusCode int, cmd *cobra.
 				return fmt.Errorf("request failed with status code %d pretty printing: %v", statusCode, err)
 			}
 
-			return fmt.Errorf(jsonErr)
+			return fmt.Errorf("%s", jsonErr)
 		case "application/yaml":
 			jsonErr, err := prettyPrintYAML(body)
 			if err != nil {
 				return fmt.Errorf("request failed with status code %d pretty printing: %v", statusCode, err)
 			}
 
-			return fmt.Errorf(jsonErr)
+			return fmt.Errorf("%s", jsonErr)
 		default:
 			return fmt.Errorf("request failed with status code %d, error: %s", statusCode, string(body))
 		}
