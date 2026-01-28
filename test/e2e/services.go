@@ -56,7 +56,7 @@ func withLogsEndpoints(endpoint string) apiOption {
 func newObservatoriumAPIService(
 	e e2e.Environment,
 	options ...apiOption,
-) (e2e.InstrumentedRunnable, error) {
+) (e2e.Runnable, error) {
 	opts := apiOptions{}
 	for _, o := range options {
 		o(&opts)
@@ -92,7 +92,7 @@ func newObservatoriumAPIService(
 		args = append(args, "--logs.rules.endpoint="+"http://"+opts.logsEndpoint)
 	}
 
-	return e2e.NewInstrumentedRunnable(e, "observatorium_api").WithPorts(ports, "http-internal").Init(
+	return e.Runnable("observatorium_api").WithPorts(ports).Init(
 		e2e.StartOptions{
 			Image:     apiImage,
 			Command:   e2e.NewCommandWithoutEntrypoint("observatorium-api", args...),
@@ -102,7 +102,7 @@ func newObservatoriumAPIService(
 	), nil
 }
 
-func newThanosReceiveService(e e2e.Environment) e2e.InstrumentedRunnable {
+func newThanosReceiveService(e e2e.Environment) e2e.Runnable {
 	ports := map[string]int{
 		"http":         10902,
 		"grpc":         10901,
@@ -119,7 +119,7 @@ func newThanosReceiveService(e e2e.Environment) e2e.InstrumentedRunnable {
 		"--tsdb.path":              "/tmp",
 	})
 
-	return e2e.NewInstrumentedRunnable(e, "thanos-receive").WithPorts(ports, "http").Init(
+	return e.Runnable("thanos-receive").WithPorts(ports).Init(
 		e2e.StartOptions{
 			Image:     thanosImage,
 			Command:   e2e.NewCommand("receive", args...),
@@ -129,7 +129,7 @@ func newThanosReceiveService(e e2e.Environment) e2e.InstrumentedRunnable {
 	)
 }
 
-func newRulesObjstoreService(e e2e.Environment) e2e.InstrumentedRunnable {
+func newRulesObjstoreService(e e2e.Environment) e2e.Runnable {
 	ports := map[string]int{"http": 8080, "internal": 8081}
 
 	args := e2e.BuildArgs(map[string]string{
@@ -140,7 +140,7 @@ func newRulesObjstoreService(e e2e.Environment) e2e.InstrumentedRunnable {
 		"--objstore.config-file": filepath.Join("/shared/config", "rules-objstore.yaml"),
 	})
 
-	return e2e.NewInstrumentedRunnable(e, "rules_objstore").WithPorts(ports, "internal").Init(
+	return e.Runnable("rules_objstore").WithPorts(ports).Init(
 		e2e.StartOptions{
 			Image:     rulesObjectStoreImage,
 			Command:   e2e.NewCommand("", args...),
@@ -150,7 +150,7 @@ func newRulesObjstoreService(e e2e.Environment) e2e.InstrumentedRunnable {
 	)
 }
 
-func newRuleSyncerService(e e2e.Environment, ruler string, rulesObjstore string) e2e.InstrumentedRunnable {
+func newRuleSyncerService(e e2e.Environment, ruler string, rulesObjstore string) e2e.Runnable {
 	ports := map[string]int{"http": 10911}
 	args := e2e.BuildArgs(map[string]string{
 		"--file":              filepath.Join("/shared/config", "rules.yaml"),
@@ -158,7 +158,7 @@ func newRuleSyncerService(e e2e.Environment, ruler string, rulesObjstore string)
 		"--thanos-rule-url":   "http://" + ruler,
 	})
 
-	return e2e.NewInstrumentedRunnable(e, "rule_syncer").WithPorts(ports, "http").Init(
+	return e.Runnable("rule_syncer").WithPorts(ports).Init(
 		e2e.StartOptions{
 			Image:   thanosRuleSyncerImage,
 			Command: e2e.NewCommand("", args...),
@@ -167,7 +167,7 @@ func newRuleSyncerService(e e2e.Environment, ruler string, rulesObjstore string)
 	)
 }
 
-func newThanosRulerService(e e2e.Environment, query string) e2e.InstrumentedRunnable {
+func newThanosRulerService(e e2e.Environment, query string) e2e.Runnable {
 	ports := map[string]int{
 		"http": 10904,
 		"grpc": 10903,
@@ -183,7 +183,7 @@ func newThanosRulerService(e e2e.Environment, query string) e2e.InstrumentedRunn
 		"--data-dir":     "/tmp",
 	})
 
-	return e2e.NewInstrumentedRunnable(e, "thanos-ruler").WithPorts(ports, "http").Init(
+	return e.Runnable("thanos-ruler").WithPorts(ports).Init(
 		e2e.StartOptions{
 			Image:     thanosImage,
 			Command:   e2e.NewCommand("rule", args...),
@@ -236,7 +236,7 @@ func startServicesForLogs(t *testing.T, e e2e.Environment) (
 	return loki.InternalEndpoint("http")
 }
 
-func newLokiService(e e2e.Environment) e2e.InstrumentedRunnable {
+func newLokiService(e e2e.Environment) e2e.Runnable {
 	ports := map[string]int{"http": 3100, "grpc": 9095}
 
 	args := e2e.BuildArgs(map[string]string{
@@ -249,7 +249,7 @@ func newLokiService(e e2e.Environment) e2e.InstrumentedRunnable {
 		"-log.level":                  logLevelError,
 	})
 
-	return e2e.NewInstrumentedRunnable(e, "loki").WithPorts(ports, "http").Init(
+	return e.Runnable("loki").WithPorts(ports).Init(
 		e2e.StartOptions{
 			Image:   lokiImage,
 			Command: e2e.NewCommandWithoutEntrypoint("loki", args...),
@@ -295,7 +295,7 @@ func newUpRun(
 	tt string,
 	readEndpoint, writeEndpoint string,
 	options ...upOption,
-) (e2e.InstrumentedRunnable, error) {
+) (e2e.Runnable, error) {
 	opts := upOptions{}
 	for _, o := range options {
 		o(&opts)
@@ -343,7 +343,7 @@ func newUpRun(
 		}
 	}
 
-	return e2e.NewInstrumentedRunnable(env, name).WithPorts(ports, "http").Init(
+	return env.Runnable(name).WithPorts(ports).Init(
 		e2e.StartOptions{
 			Image:   upImage,
 			Command: e2e.NewCommandWithoutEntrypoint("up", args...),
