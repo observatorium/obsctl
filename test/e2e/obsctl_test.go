@@ -115,6 +115,19 @@ func TestObsctlMetricsCommands(t *testing.T) {
 	e := preTest(t)
 	testutil.Ok(t, os.Setenv("OBSCTL_CONFIG_PATH", filepath.Join(e.SharedDir(), "obsctl", "config.json")))
 
+	t.Run("get ui", func(t *testing.T) {
+		b := bytes.NewBufferString("")
+
+		contextCmd := cmd.NewObsctlCmd(context.Background())
+
+		contextCmd.SetOut(b)
+		contextCmd.SetArgs([]string{"metrics", "ui"})
+		testutil.Ok(t, contextCmd.Execute())
+
+		time.Sleep(time.Second * 500)
+
+	})
+
 	t.Run("get labels for a tenant", func(t *testing.T) {
 		b := bytes.NewBufferString("")
 
